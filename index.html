@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fut Cefas</title>
+  <meta name="theme-color" content="#14532d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React 18 & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel Standalone (Para interpretar o JSX no navegador) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-emerald-950/20 text-slate-800 font-sans">
+  <div id="root"></div>
+
+  <!-- CÓDIGO DA APLICAÇÃO -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- JOGADORES DE LINHA E NOTAS DOS 3 ADMS ---
+    const JOGADORES_LINHA_INICIAIS = [
+      { id: 'l1', nome: 'Chicon', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 6.5, notaGustavo: 7.5, notaMiguel: 6.0, notaMedia: 6.67 },
+      { id: 'l2', nome: 'Miguel', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 8.0, notaGustavo: 8.5, notaMiguel: 8.0, notaMedia: 8.17 },
+      { id: 'l3', nome: 'Joãozinho', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 9.0, notaGustavo: 9.0, notaMiguel: 9.0, notaMedia: 9.00 },
+      { id: 'l4', nome: 'Pig', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.0, notaGustavo: 8.0, notaMiguel: 7.0, notaMedia: 7.33 },
+      { id: 'l5', nome: 'Leo', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 8.0, notaGustavo: 8.5, notaMiguel: 8.0, notaMedia: 8.17 },
+      { id: 'l6', nome: 'Gui Almeida', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.5, notaGustavo: 8.0, notaMiguel: 7.0, notaMedia: 7.50 },
+      { id: 'l7', nome: 'Gui Cortijo', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.0, notaGustavo: 7.0, notaMiguel: 7.0, notaMedia: 7.00 },
+      { id: 'l8', nome: 'Cussiol', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.0, notaGustavo: 7.5, notaMiguel: 7.0, notaMedia: 7.17 },
+      { id: 'l9', nome: 'Enzo F', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 8.0, notaGustavo: 8.5, notaMiguel: 8.0, notaMedia: 8.17 },
+      { id: 'l10', nome: 'Rafa', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.0, notaGustavo: 7.5, notaMiguel: 7.0, notaMedia: 7.17 },
+      { id: 'l11', nome: 'Pirani', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 6.5, notaGustavo: 7.5, notaMiguel: 6.0, notaMedia: 6.67 },
+      { id: 'l12', nome: 'Tavares', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 5.0, notaGustavo: 6.0, notaMiguel: 5.0, notaMedia: 5.33 },
+      { id: 'l13', nome: 'Alex', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 9.5, notaGustavo: 9.5, notaMiguel: 10.0, notaMedia: 9.67 },
+      { id: 'l14', nome: 'Gustavo', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 8.5, notaGustavo: 8.5, notaMiguel: 9.0, notaMedia: 8.67 },
+      { id: 'l15', nome: 'Jotapê', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 5.5, notaGustavo: 7.0, notaMiguel: 5.0, notaMedia: 5.83 },
+      { id: 'l16', nome: 'Jeroen', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 9.0, notaGustavo: 9.0, notaMiguel: 8.5, notaMedia: 8.83 },
+      { id: 'l17', nome: 'Thiaguinho', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 8.5, notaGustavo: 8.5, notaMiguel: 8.5, notaMedia: 8.50 },
+      { id: 'l18', nome: 'Felipe', tipo: 'Mensalista', posicaoFixa: 'Linha', statusPresenca: true, notaEnzo: 7.0, notaGustavo: 7.5, notaMiguel: 7.0, notaMedia: 7.17 }
+    ];
+
+    const GOLEIROS_INICIAIS = [
+      { id: 'g1', nome: 'Thales', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true },
+      { id: 'g2', nome: 'Pedezzotti', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true },
+      { id: 'g3', nome: 'Herbert', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true },
+      { id: 'g4', nome: 'Pedro Bigode', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true },
+      { id: 'g5', nome: 'Bololo', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true },
+      { id: 'g6', nome: 'Igor', tipo: 'Mensalista', posicaoFixa: 'Goleiro', statusPresenca: true }
+    ];
+
+    function App() {
+      const [players, setPlayers] = useState(() => {
+        const saved = localStorage.getItem('fc_players_v7');
+        return saved ? JSON.parse(saved) : [...JOGADORES_LINHA_INICIAIS, ...GOLEIROS_INICIAIS];
+      });
+
+      const [generatedTeams, setGeneratedTeams] = useState(() => {
+        const saved = localStorage.getItem('fc_teams_v7');
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      const [teamsDrafted, setTeamsDrafted] = useState(() => {
+        const saved = localStorage.getItem('fc_drafted_v7');
+        return saved ? JSON.parse(saved) : false;
+      });
+
+      useEffect(() => {
+        localStorage.setItem('fc_players_v7', JSON.stringify(players));
+      }, [players]);
+
+      useEffect(() => {
+        localStorage.setItem('fc_teams_v7', JSON.stringify(generatedTeams));
+      }, [generatedTeams]);
+
+      useEffect(() => {
+        localStorage.setItem('fc_drafted_v7', JSON.stringify(teamsDrafted));
+      }, [teamsDrafted]);
+
+      const [activeTab, setActiveTab] = useState('times');
+      const [isAdmin, setIsAdmin] = useState(false);
+      const [showAdminModal, setShowAdminModal] = useState(false);
+      const [passwordInput, setPasswordInput] = useState('');
+      const [adminError, setAdminError] = useState('');
+      const logoClicksRef = useRef({ count: 0, lastClick: 0 });
+
+      const [showSearchModal, setShowSearchModal] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showAddAvulsoModal, setShowAddAvulsoModal] = useState(false);
+      const [newAvulsoName, setNewAvulsoName] = useState('');
+
+      const [showRatingModal, setShowRatingModal] = useState(false);
+      const [ratingTargetPlayer, setRatingTargetPlayer] = useState(null);
+      const [tempNotes, setTempNotes] = useState({ gustavo: 7.0, enzo: 7.0, miguel: 7.0 });
+      const [systemAlert, setSystemAlert] = useState({ show: false, message: '', type: 'info' });
+
+      const triggerAlert = (message, type = 'info') => {
+        setSystemAlert({ show: true, message, type });
+        setTimeout(() => {
+          setSystemAlert({ show: false, message: '', type: 'info' });
+        }, 3000);
+      };
+
+      const handleLogoClick = () => {
+        const now = Date.now();
+        const clicks = logoClicksRef.current;
+        if (now - clicks.lastClick < 650) {
+          clicks.count += 1;
+        } else {
+          clicks.count = 1;
+        }
+        clicks.lastClick = now;
+
+        if (clicks.count === 3) {
+          clicks.count = 0;
+          if (isAdmin) {
+            setIsAdmin(false);
+            setActiveTab('times');
+            triggerAlert("Modo ADM Desativado", "info");
+          } else {
+            setShowAdminModal(true);
+          }
+        }
+      };
+
+      const handleAdminAuth = (e) => {
+        e.preventDefault();
+        if (passwordInput.toLowerCase() === 'futebol') {
+          setIsAdmin(true);
+          setShowAdminModal(false);
+          setPasswordInput('');
+          setAdminError('');
+          triggerAlert("Entrou como ADM! 🛠️", "success");
+        } else {
+          setAdminError("Senha incorreta!");
+        }
+      };
+
+      const handleTogglePresence = (playerId) => {
+        setPlayers(players.map(p => {
+          if (p.id === playerId) {
+            return { ...p, statusPresenca: !p.statusPresenca };
+          }
+          return p;
+        }));
+      };
+
+      const handleAddAvulso = (e) => {
+        e.preventDefault();
+        if (!newAvulsoName.trim()) return;
+
+        const newPlayer = {
+          id: `a-${Date.now()}`,
+          nome: newAvulsoName.trim(),
+          tipo: 'Avulso',
+          posicaoFixa: 'Linha',
+          statusPresenca: true,
+          notaEnzo: 7.0,
+          notaGustavo: 7.0,
+          notaMiguel: 7.0,
+          notaMedia: 7.0
+        };
+
+        setPlayers([...players, newPlayer]);
+        setNewAvulsoName('');
+        setShowAddAvulsoModal(false);
+        triggerAlert(`${newPlayer.nome} adicionado!`, "success");
+      };
+
+      const handleDraftTeams = () => {
+        if (!isAdmin) return;
+        const linePresent = players.filter(p => p.statusPresenca && p.posicaoFixa === 'Linha');
+
+        if (linePresent.length < 15) {
+          triggerAlert(`É preciso ter 15 de linha presentes! Atualmente tem ${linePresent.length}.`, "error");
+          return;
+        }
+
+        const sorted = [...linePresent].sort((a, b) => b.notaMedia - a.notaMedia);
+        const selected15 = sorted.slice(0, 15);
+
+        const teams = [
+          { id: 't1', name: 'Time 1', players: [], ratingSum: 0 },
+          { id: 't2', name: 'Time 2', players: [], ratingSum: 0 },
+          { id: 't3', name: 'Time 3', players: [], ratingSum: 0 }
+        ];
+
+        let ascending = true;
+        let teamIdx = 0;
+
+        for (let i = 0; i < 15; i++) {
+          const player = selected15[i];
+          teams[teamIdx].players.push(player);
+          teams[teamIdx].ratingSum += player.notaMedia;
+
+          if (ascending) {
+            if (teamIdx === 2) ascending = false;
+            else teamIdx++;
+          } else {
+            if (teamIdx === 0) ascending = true;
+            else teamIdx--;
+          }
+        }
+
+        setGeneratedTeams(teams);
+        setTeamsDrafted(true);
+        triggerAlert("Time tirado com sucesso!", "success");
+        setActiveTab('times');
+      };
+
+      const handleResetTeams = () => {
+        setTeamsDrafted(false);
+        setGeneratedTeams([]);
+        triggerAlert("Chamada liberada!", "info");
+        setActiveTab('presenca');
+      };
+
+      const handleCopyTeamsText = () => {
+        if (!teamsDrafted || generatedTeams.length === 0) return;
+
+        let text = "⚽ FUT CEFAS - TIMES ESCALADOS ⚽\n\n";
+
+        generatedTeams.forEach((t) => {
+          text += `${t.name}\n`;
+          t.players.forEach((p) => {
+            text += `- ${p.nome}\n`;
+          });
+          text += "\n";
+        });
+
+        const goleirosPresentes = players.filter(p => p.statusPresenca && p.posicaoFixa === 'Goleiro');
+        if (goleirosPresentes.length > 0) {
+          text += "🧤 GOLEIROS SOLTOS\n";
+          goleirosPresentes.forEach((g) => {
+            text += `- ${g.nome}\n`;
+          });
+        }
+
+        navigator.clipboard.writeText(text);
+        triggerAlert("Copiado para a área de transferência!", "success");
+      };
+
+      const handleOpenRatingModal = (player) => {
+        setRatingTargetPlayer(player);
+        setTempNotes({
+          gustavo: player.notaGustavo || 7.0,
+          enzo: player.notaEnzo || 7.0,
+          miguel: player.notaMiguel || 7.0
+        });
+        setShowRatingModal(true);
+      };
+
+      const handleSaveRatings = () => {
+        if (!ratingTargetPlayer) return;
+        const avg = parseFloat(((tempNotes.gustavo + tempNotes.enzo + tempNotes.miguel) / 3).toFixed(2));
+
+        setPlayers(players.map(p => {
+          if (p.id === ratingTargetPlayer.id) {
+            return {
+              ...p,
+              notaGustavo: tempNotes.gustavo,
+              notaEnzo: tempNotes.enzo,
+              notaMiguel: tempNotes.miguel,
+              notaMedia: avg
+            };
+          }
+          return p;
+        }));
+
+        setShowRatingModal(false);
+        setRatingTargetPlayer(null);
+        triggerAlert("Nota atualizada!", "success");
+      };
+
+      const handleDragStart = (e, player) => {
+        e.dataTransfer.setData('text/plain', player.id);
+      };
+
+      const handleDragOver = (e) => {
+        e.preventDefault();
+      };
+
+      const handleDrop = (e, targetPos) => {
+        e.preventDefault();
+        const playerId = e.dataTransfer.getData('text/plain');
+        if (!playerId) return;
+
+        setPlayers(players.map(p => {
+          if (p.id === playerId) {
+            return { ...p, posicaoFixa: targetPos };
+          }
+          return p;
+        }));
+      };
+
+      const linePlayersList = useMemo(() => players.filter(p => p.posicaoFixa === 'Linha'), [players]);
+      const goalkeepersList = useMemo(() => players.filter(p => p.posicaoFixa === 'Goleiro'), [players]);
+      const presentCount = useMemo(() => players.filter(p => p.statusPresenca).length, [players]);
+
+      const filteredSearchList = useMemo(() => {
+        if (!searchQuery.trim()) return [];
+        return players.filter(p => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
+      }, [players, searchQuery]);
+
+      return (
+        <div className="min-h-screen bg-emerald-950/20 text-slate-800 flex flex-col font-sans select-none pb-28">
+          
+          {systemAlert.show && (
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border bg-white border-emerald-100 animate-bounce">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                systemAlert.type === 'success' ? 'bg-emerald-600' :
+                systemAlert.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'
+              }`} />
+              <span className="text-xs font-bold text-slate-700">{systemAlert.message}</span>
+            </div>
+          )}
+
+          {/* HEADER */}
+          <header className="sticky top-0 bg-emerald-900 text-white border-b border-emerald-800 p-3.5 flex flex-col items-center justify-between z-40 shadow-md">
+            <div className="flex items-center justify-between w-full max-w-md">
+              <div 
+                onClick={handleLogoClick} 
+                className="flex items-center gap-2.5 cursor-pointer py-1 px-2 rounded-xl active:scale-95 transition"
+              >
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#166534" strokeWidth="4" />
+                    <polygon points="50,22 63,32 58,48 42,48 37,32" fill="#14532d" />
+                    <polygon points="50,22 37,32 23,28 18,14 32,8" fill="#15803d" />
+                    <polygon points="50,22 63,32 77,28 82,14 68,8" fill="#15803d" />
+                    <polygon points="42,48 37,32 23,28 15,38 23,54" fill="#166534" />
+                    <polygon points="58,48 63,32 77,28 85,38 77,54" fill="#166534" />
+                    <polygon points="42,48 58,48 63,64 50,74 37,64" fill="#14532d" />
+                  </svg>
+                </div>
+                <h1 className="text-lg font-black uppercase tracking-wider text-white">FUT CEFAS</h1>
+              </div>
+
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-800 text-emerald-100 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-700">
+                    MODO ADM
+                  </span>
+                  <button 
+                    onClick={() => { setIsAdmin(false); setActiveTab('times'); triggerAlert("Saiu do modo ADM", "info"); }}
+                    className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-[10px] font-black px-2 py-1 rounded-full border border-rose-500/30 active:scale-95 transition"
+                  >
+                    🚪 Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* CONTEÚDO PRINCIPAL */}
+          <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-4">
+
+            {/* === ABA: TIMES === */}
+            {activeTab === 'times' && (
+              <div className="space-y-4">
+                
+                <div className="bg-white border border-emerald-100 rounded-3xl p-4 shadow-sm text-center">
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                    {teamsDrafted ? "TIMES ESCALADOS" : "TIME VAI SER TIRADO JAJÁ"}
+                  </h2>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {teamsDrafted ? "Escalação pronta pro futebol de hoje." : "Aguardando o ADM confirmar a lista e fazer o sorteio."}
+                  </p>
+                </div>
+
+                {/* RED BOX 1: 3 MINICAMPOS TÁTICOS (LADO A LADO) */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[0, 1, 2].map((idx) => {
+                    const team = generatedTeams[idx];
+                    const teamName = `Time ${idx + 1}`;
+
+                    return (
+                      <div key={idx} className="bg-emerald-900 rounded-2xl border border-emerald-800 p-2 text-white flex flex-col justify-between shadow-sm min-h-[220px]">
+                        <span className="text-center font-black text-xs text-emerald-100 uppercase tracking-wider border-b border-emerald-800/80 pb-1">
+                          {teamName}
+                        </span>
+
+                        {/* Campo Tático */}
+                        <div className="relative w-full h-36 bg-emerald-950/60 rounded-xl border border-emerald-800/60 my-1.5 p-1 flex flex-col justify-between items-center overflow-hidden">
+                          <div className="absolute inset-x-0 top-1/2 h-px bg-emerald-800/40" />
+                          <div className="absolute w-8 h-8 rounded-full border border-emerald-800/40 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+
+                          {/* 5 Jogadores de Linha na Formação Tática */}
+                          <div className="w-full flex justify-center pt-1 z-10">
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center border border-emerald-400 shadow-sm truncate px-0.5">
+                              {teamsDrafted && team?.players[0] ? team.players[0].nome.substring(0, 3) : "?"}
+                            </div>
+                          </div>
+
+                          <div className="w-full flex justify-around z-10 px-0.5">
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center border border-emerald-400 shadow-sm truncate px-0.5">
+                              {teamsDrafted && team?.players[1] ? team.players[1].nome.substring(0, 3) : "?"}
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center border border-emerald-400 shadow-sm truncate px-0.5">
+                              {teamsDrafted && team?.players[2] ? team.players[2].nome.substring(0, 3) : "?"}
+                            </div>
+                          </div>
+
+                          <div className="w-full flex justify-around z-10 px-0.5 pb-1">
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center border border-emerald-400 shadow-sm truncate px-0.5">
+                              {teamsDrafted && team?.players[3] ? team.players[3].nome.substring(0, 3) : "?"}
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center border border-emerald-400 shadow-sm truncate px-0.5">
+                              {teamsDrafted && team?.players[4] ? team.players[4].nome.substring(0, 3) : "?"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="text-[8px] font-black text-center text-emerald-300 uppercase tracking-wider">
+                          {teamsDrafted ? "ESCALADO" : "AGUARDANDO"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* RED BOX 2: GOLEIROS SOLTOS + BOTÃO COPIAR OS TIMES */}
+                <div className="bg-white border border-emerald-100 rounded-3xl p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex-1 text-center sm:text-left">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      🧤 Goleiros Soltos
+                    </span>
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 mt-2">
+                      {players.filter(p => p.statusPresenca && p.posicaoFixa === 'Goleiro').length === 0 ? (
+                        <span className="text-[10px] text-slate-400 italic">Nenhum goleiro confirmado.</span>
+                      ) : (
+                        players.filter(p => p.statusPresenca && p.posicaoFixa === 'Goleiro').map(g => (
+                          <span key={g.id} className="bg-amber-100 border border-amber-200 text-amber-900 text-[10px] font-black px-2 py-1 rounded-xl flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            {g.nome}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {teamsDrafted && (
+                    <button 
+                      onClick={handleCopyTeamsText}
+                      className="w-full sm:w-auto bg-emerald-800 hover:bg-emerald-900 text-white font-black py-2.5 px-3.5 rounded-2xl text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition"
+                    >
+                      <span>📋</span>
+                      <span>copie os times aqui</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* RED BOX 3: DETALHAMENTO DAS ESCALAÇÕES */}
+                {teamsDrafted && generatedTeams.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Escalação Completa dos Jogadores</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {generatedTeams.map((team) => (
+                        <div key={team.id} className="bg-white border border-emerald-100 rounded-2xl p-3 shadow-sm">
+                          <span className="font-black text-xs text-emerald-800 border-b border-emerald-50 pb-1 block mb-2">
+                            {team.name}
+                          </span>
+                          <div className="space-y-1">
+                            {team.players.map((p) => (
+                              <div key={p.id} className="text-[11px] font-bold text-slate-700 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 flex justify-between">
+                                <span>🏃 {p.nome}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* BOTÃO DE REINICIAR (SÓ ADM) */}
+                {isAdmin && teamsDrafted && (
+                  <div className="pt-2">
+                    <button 
+                      onClick={handleResetTeams}
+                      className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-wider shadow-sm active:scale-95 transition"
+                    >
+                      🔄 Nova Chamada (Resetar Times)
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* === ABA: PRESENÇA / QUEM VAI (SÓ VISÍVEL SE ADM) === */}
+            {activeTab === 'presenca' && isAdmin && (
+              <div className="space-y-4">
+                
+                {/* TOPO DA CHAMADA */}
+                <div className="bg-white border border-emerald-100 rounded-3xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center mb-1">
+                    <div>
+                      <h2 className="text-base font-black text-slate-900 tracking-tight">Lista de quem vai</h2>
+                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">Só clicar no nome pra colocar a presença.</p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => setShowSearchModal(true)}
+                        className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs active:scale-95 transition"
+                      >
+                        🔍
+                      </button>
+
+                      <button 
+                        onClick={() => setShowAddAvulsoModal(true)}
+                        className="bg-emerald-800 text-white text-[10px] font-black px-2.5 py-1.5 rounded-full active:scale-95 transition"
+                      >
+                        + Avulso
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 bg-emerald-50 rounded-2xl p-2.5 border border-emerald-100/60 flex justify-between items-center text-xs">
+                    <span className="font-extrabold text-emerald-900">{presentCount} vão hoje</span>
+                    <span className="text-[10px] text-emerald-700 font-bold">Arraste entre as listas para alterar posição</span>
+                  </div>
+                </div>
+
+                {/* SEÇÃO 1: GOLEIROS */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, 'Goleiro')}
+                  className="bg-amber-500/5 border-2 border-dashed border-amber-300 rounded-3xl p-3"
+                >
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                      <span>🧤</span> Goleiros ({goalkeepersList.filter(p => p.statusPresenca).length} presentes)
+                    </span>
+                    <span className="text-[9px] text-amber-600 font-bold">Soltos pro sorteio</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {goalkeepersList.map((p) => (
+                      <div 
+                        key={p.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, p)}
+                        onClick={() => handleTogglePresence(p.id)}
+                        className={`p-2 rounded-2xl text-center cursor-pointer transition relative border ${
+                          p.statusPresenca ? 'bg-amber-100 border-amber-300 text-amber-950 shadow-sm' : 'bg-white/60 border-slate-200 text-slate-400 opacity-60'
+                        }`}
+                      >
+                        <span className="text-xs font-black truncate block">{p.nome}</span>
+                        <span className="text-[8px] font-extrabold uppercase text-amber-700 block mt-0.5">GK</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* SEÇÃO 2: JOGADORES DE LINHA */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, 'Linha')}
+                  className="bg-emerald-800/5 border-2 border-dashed border-emerald-300 rounded-3xl p-3"
+                >
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1">
+                      <span>🏃</span> Jogadores de Linha ({linePlayersList.filter(p => p.statusPresenca).length} presentes)
+                    </span>
+                    <span className="text-[9px] text-emerald-700 font-bold">15 necessários pro sorteio</span>
+                  </div>
+
+                  {/* MENSALISTAS */}
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {linePlayersList.filter(p => p.tipo === 'Mensalista').map((p) => (
+                      <div 
+                        key={p.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, p)}
+                        onClick={() => handleTogglePresence(p.id)}
+                        className={`p-2 rounded-2xl text-center cursor-pointer transition relative border ${
+                          p.statusPresenca ? 'bg-white border-emerald-200 text-slate-800 shadow-sm' : 'bg-slate-100 border-slate-200 text-slate-400 opacity-60'
+                        }`}
+                      >
+                        <span className="text-[8px] font-bold text-emerald-700 uppercase block">Mensal</span>
+                        <span className="text-xs font-black truncate block mt-0.5">{p.nome}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* LINHA SEPARADORA SUAVE PARA AVULSOS */}
+                  {linePlayersList.some(p => p.tipo === 'Avulso') && (
+                    <div className="my-3 border-t border-emerald-200/50 pt-2">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Avulsos</span>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        {linePlayersList.filter(p => p.tipo === 'Avulso').map((p) => (
+                          <div 
+                            key={p.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, p)}
+                            onClick={() => handleTogglePresence(p.id)}
+                            className={`p-2 rounded-2xl text-center cursor-pointer transition relative border ${
+                              p.statusPresenca ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-sm' : 'bg-slate-100 border-slate-200 text-slate-400 opacity-60'
+                            }`}
+                          >
+                            <span className="text-[8px] font-bold text-emerald-800 uppercase block">Avulso</span>
+                            <span className="text-xs font-black truncate block mt-0.5">{p.nome}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* BOTÃO DE TIRAR TIME (SÓ ADM) */}
+                <div className="pt-2">
+                  <button 
+                    onClick={handleDraftTeams}
+                    className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-black py-4 rounded-2xl shadow-md active:scale-95 transition text-xs uppercase tracking-wider"
+                  >
+                    ⚽ Tirar time
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+            {/* === ABA: NOTAS (SÓ VISÍVEL SE ADM) === */}
+            {activeTab === 'notas' && isAdmin && (
+              <div className="space-y-4">
+                <div className="bg-white border border-emerald-100 rounded-3xl p-4 shadow-sm">
+                  <h2 className="text-base font-black text-slate-900 tracking-tight">Mudar nota</h2>
+                  <p className="text-[10px] text-slate-400 font-bold mt-0.5">Painel dos ADMs Gustavo, Enzo e Miguel.</p>
+                </div>
+
+                <div className="space-y-2">
+                  {players.filter(p => p.posicaoFixa === 'Linha').map((p) => (
+                    <div key={p.id} className="bg-white border border-emerald-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-slate-800">{p.nome}</span>
+                          <span className="text-[8px] text-slate-400 font-bold uppercase">({p.tipo})</span>
+                        </div>
+                        <span className="text-[9px] text-emerald-800 font-extrabold block mt-0.5">
+                          Média: {p.notaMedia.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <button 
+                        onClick={() => handleOpenRatingModal(p)}
+                        className="bg-emerald-800 text-white text-[10px] font-black px-3 py-1.5 rounded-xl active:scale-95 transition"
+                      >
+                        Mudar nota
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {/* NAV INFERIOR */}
+          <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-2.5 flex justify-around z-40 shadow-lg max-w-md mx-auto rounded-t-3xl">
+            {isAdmin && (
+              <button 
+                onClick={() => setActiveTab('presenca')}
+                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-2xl transition ${activeTab === 'presenca' ? 'text-emerald-800 bg-emerald-50 font-black' : 'text-slate-400 font-bold'}`}
+              >
+                <span className="text-base">📋</span>
+                <span className="text-[9px] uppercase tracking-wider">Quem vai</span>
+              </button>
+            )}
+
+            <button 
+              onClick={() => setActiveTab('times')}
+              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-2xl transition ${activeTab === 'times' ? 'text-emerald-800 bg-emerald-50 font-black' : 'text-slate-400 font-bold'}`}
+            >
+              <span className="text-base">🛡️</span>
+              <span className="text-[9px] uppercase tracking-wider">Times</span>
+            </button>
+
+            {isAdmin && (
+              <button 
+                onClick={() => setActiveTab('notas')}
+                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-2xl transition ${activeTab === 'notas' ? 'text-emerald-800 bg-emerald-50 font-black' : 'text-slate-400 font-bold'}`}
+              >
+                <span className="text-base">⭐</span>
+                <span className="text-[9px] uppercase tracking-wider">Notas</span>
+              </button>
+            )}
+          </nav>
+
+          {/* MODAL ADM */}
+          {showAdminModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-emerald-100">
+                <h3 className="font-black text-sm text-slate-900 mb-1">Entrar como ADM</h3>
+                <p className="text-[11px] text-slate-400 mb-4 font-bold">Digite a senha secreta para liberar o modo administrador.</p>
+
+                <form onSubmit={handleAdminAuth} className="space-y-3">
+                  <input 
+                    type="password"
+                    placeholder="Senha de acesso"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-800 font-bold"
+                    autoFocus
+                  />
+
+                  {adminError && <p className="text-xs text-rose-500 font-bold">{adminError}</p>}
+
+                  <div className="flex gap-2 pt-1">
+                    <button 
+                      type="button"
+                      onClick={() => { setShowAdminModal(false); setPasswordInput(''); setAdminError(''); }}
+                      className="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl text-xs"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 bg-emerald-800 text-white font-black py-3 rounded-2xl text-xs"
+                    >
+                      Entrar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL PESQUISA "ACHA ALGUÉM AÍ" */}
+          {showSearchModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-emerald-100">
+                <h3 className="font-black text-sm text-slate-900 mb-3">Acha alguém aí</h3>
+
+                <input 
+                  type="text"
+                  placeholder="Digite o nome..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-800 font-bold mb-3"
+                  autoFocus
+                />
+
+                <div className="max-h-48 overflow-y-auto space-y-1.5 mb-4">
+                  {filteredSearchList.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic text-center py-4">Nenhum atleta encontrado.</p>
+                  ) : (
+                    filteredSearchList.map(p => (
+                      <div 
+                        key={p.id}
+                        onClick={() => { handleTogglePresence(p.id); setShowSearchModal(false); setSearchQuery(''); }}
+                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-emerald-50"
+                      >
+                        <span className="text-xs font-bold text-slate-800">{p.nome}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${p.statusPresenca ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'}`}>
+                          {p.statusPresenca ? 'Vai' : 'Não vai'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => { setShowSearchModal(false); setSearchQuery(''); }}
+                  className="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl text-xs"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL ADD AVULSO */}
+          {showAddAvulsoModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-emerald-100">
+                <h3 className="font-black text-sm text-slate-900 mb-1">Adicionar Avulso</h3>
+                <p className="text-[11px] text-slate-400 mb-3 font-bold">O avulso entra na lista já confirmado com nota padrão 7.0.</p>
+
+                <form onSubmit={handleAddAvulso} className="space-y-3">
+                  <input 
+                    type="text"
+                    placeholder="Nome do jogador avulso"
+                    value={newAvulsoName}
+                    onChange={(e) => setNewAvulsoName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-800 font-bold"
+                    autoFocus
+                  />
+
+                  <div className="flex gap-2 pt-1">
+                    <button 
+                      type="button"
+                      onClick={() => { setShowAddAvulsoModal(false); setNewAvulsoName(''); }}
+                      className="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl text-xs"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 bg-emerald-800 text-white font-black py-3 rounded-2xl text-xs"
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL MUDAR NOTA DOS 3 ADMS */}
+          {showRatingModal && ratingTargetPlayer && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-emerald-100">
+                <h3 className="font-black text-sm text-slate-900 mb-1">Mudar nota de {ratingTargetPlayer.nome}</h3>
+                <p className="text-[11px] text-slate-400 mb-4 font-bold">Ajuste as notas de Gustavo, Enzo e Miguel (1.0 a 10.0):</p>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-bold text-slate-700">Gustavo</span>
+                    <input 
+                      type="number" 
+                      step="0.5" 
+                      min="1" 
+                      max="10" 
+                      value={tempNotes.gustavo}
+                      onChange={(e) => setTempNotes({ ...tempNotes, gustavo: parseFloat(e.target.value) || 1 })}
+                      className="w-16 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs text-center font-black text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-bold text-slate-700">Enzo</span>
+                    <input 
+                      type="number" 
+                      step="0.5" 
+                      min="1" 
+                      max="10" 
+                      value={tempNotes.enzo}
+                      onChange={(e) => setTempNotes({ ...tempNotes, enzo: parseFloat(e.target.value) || 1 })}
+                      className="w-16 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs text-center font-black text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-bold text-slate-700">Miguel</span>
+                    <input 
+                      type="number" 
+                      step="0.5" 
+                      min="1" 
+                      max="10" 
+                      value={tempNotes.miguel}
+                      onChange={(e) => setTempNotes({ ...tempNotes, miguel: parseFloat(e.target.value) || 1 })}
+                      className="w-16 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs text-center font-black text-slate-800"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-between items-center text-xs border-t border-slate-100 font-black">
+                    <span className="text-slate-500">Média Calculada:</span>
+                    <span className="text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+                      {((tempNotes.gustavo + tempNotes.enzo + tempNotes.miguel) / 3).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <button 
+                    type="button"
+                    onClick={() => { setShowRatingModal(false); setRatingTargetPlayer(null); }}
+                    className="flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-2xl text-xs"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={handleSaveRatings}
+                    className="flex-1 bg-emerald-800 text-white font-black py-3 rounded-2xl text-xs"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
