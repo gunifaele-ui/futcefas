@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background: #f4f1ea;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(23,52,48,0.2); border-radius: 999px; }
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.93) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(10px,-14px) scale(1.05); }
+}
+
+.fc-modal-backdrop { animation: fadeIn 0.18s ease-out; }
+.fc-modal-card { animation: popIn 0.22s cubic-bezier(.2,.9,.3,1.2); }
+.fc-sheet { animation: sheetUp 0.28s cubic-bezier(.16,.9,.3,1.1); }
+.fc-toast { animation: slideIn 0.2s ease-out; }
+.fc-blob { animation: floatBlob 9s ease-in-out infinite; }
+
+input[type="range"].fc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8df;
+  outline: none;
+}
+input[type="range"].fc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: currentColor;
+  border: 3px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  cursor: pointer;
+}
+input[type="range"].fc-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: currentColor;
+  border: 3px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  cursor: pointer;
+}
