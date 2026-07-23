@@ -60,6 +60,7 @@ function TeamCard({ team }) {
 export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmin, isViewer, copied, onCopyTeams, onResetTeams, onGoToHistory }) {
   const goleirosPresentes = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Goleiro');
   const showPixCard = !isAdmin || isViewer;
+  const [showSorteioInfo, setShowSorteioInfo] = useState(false);
 
   return (
     <div className="space-y-3">
@@ -88,13 +89,23 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
         )}
       </div>
 
-      <div className="bg-fc-limesoft/50 rounded-2xl px-3.5 py-2.5 flex items-start gap-2.5">
-        <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-fc-dark shrink-0 mt-0.5">
-          <Icon name="target" size={12} />
-        </span>
-        <p className="text-[11px] text-fc-dark/80 font-medium leading-snug">
-          Sorteio justo: os times saem balanceados por nível e evitam repetir as mesmas duplas dos últimos jogos, pra ninguém cair sempre no time fraco (ou sempre no forte). Como o Time 1 e o Time 2 sempre começam jogando, eles ficam com os times de menor força — os mais fortes (3 e/ou 4) começam esperando a vez. Cada partida dura até 7 min (ou 2 gols), num rodízio de 1 hora de jogo.
-        </p>
+      <div className="bg-fc-limesoft/50 rounded-2xl px-3.5 py-2.5">
+        <button
+          type="button"
+          onClick={() => setShowSorteioInfo((v) => !v)}
+          className="w-full flex items-center gap-2.5 text-left"
+        >
+          <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-fc-dark shrink-0">
+            <Icon name="target" size={12} />
+          </span>
+          <span className="flex-1 text-[11px] text-fc-dark/80 font-medium">Como funciona o sorteio?</span>
+          <Icon name="chevronDown" size={14} className={`text-fc-dark/50 shrink-0 transition-transform ${showSorteioInfo ? 'rotate-180' : ''}`} />
+        </button>
+        {showSorteioInfo && (
+          <p className="text-[11px] text-fc-dark/80 font-medium leading-snug mt-2 pl-8">
+            Cada jogador tem uma nota média, formada pela nota dada por 3 avaliadores — é essa média que vira o nível do jogador. Os times saem balanceados por nível e evitam repetir as mesmas duplas dos últimos jogos, pra ninguém cair sempre no time fraco (ou sempre no forte). Como o Time 1 e o Time 2 sempre começam jogando, eles ficam com os times de menor força — os mais fortes (3 e/ou 4) começam esperando a vez. Cada partida dura até 7 min (ou 2 gols), num rodízio de 1 hora de jogo.
+          </p>
+        )}
       </div>
 
       {teamsDrafted && generatedTeams.length > 0 ? (

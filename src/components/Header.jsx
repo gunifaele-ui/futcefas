@@ -1,13 +1,28 @@
 import Icon from './Icon';
 import { ADMIN_LABELS } from '../utils/adminLabels';
 
-export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmin }) {
+export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmin, hasUnreadActivity, onOpenActivityLog }) {
   const isViewerRole = currentAdmin === 'visualização';
 
   return (
     <header className="sticky top-0 bg-fc-dark text-white pt-3.5 pb-7 px-3.5 flex flex-col items-center justify-between z-40 shadow-nav overflow-hidden rounded-b-[28px]">
       <div className="absolute top-4 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
       <div className="flex items-center justify-center w-full max-w-md relative">
+        {isAdmin && !isViewerRole && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <button
+              onClick={onOpenActivityLog}
+              title="Notificações"
+              className="relative w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/15 text-white/80 rounded-full transition"
+            >
+              <Icon name="bell" size={15} />
+              {hasUnreadActivity && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-fc-lime border border-fc-dark" />
+              )}
+            </button>
+          </div>
+        )}
+
         <div onClick={onLogoClick} className="cursor-pointer py-1 px-2 rounded-xl active:scale-95 transition">
           <img src="/logo.png" alt="Futebol Cefas" className="h-14 w-auto drop-shadow-md" />
         </div>

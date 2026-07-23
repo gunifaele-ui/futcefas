@@ -28,6 +28,7 @@ const PATHS = {
   ball: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4L12 7.5z" /><path d="M12 3.5v4M19.8 9.6l-3.7 2.9M17.2 19.2l-3.1-5M6.8 19.2l3.1-5M4.2 9.6l3.7 2.9" /></>,
   chevronDown: <path d="M6 9l6 6 6-6" />,
   info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>,
+  bell: <><path d="M6 9a6 6 0 0112 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z" /><path d="M10 19a2 2 0 004 0" /></>,
 };
 
 export default function Icon({ name, size = 18, className = '', strokeWidth = 1.75 }) {

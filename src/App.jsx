@@ -16,6 +16,7 @@ import ImportAttendanceModal from './components/modals/ImportAttendanceModal';
 import AddPlayerModal from './components/modals/AddPlayerModal';
 import EditPlayerModal from './components/modals/EditPlayerModal';
 import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal';
+import ActivityLogModal from './components/modals/ActivityLogModal';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
 
 const MIN_JOGADORES_LINHA = 15;
@@ -25,6 +26,8 @@ const VIEWER_KEY = 'visualização';
 const DRAFT_JITTER = 0.6;
 const DRAFT_CANDIDATES = 60;
 const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
+const MAX_ACTIVITY_LOG = 150;
+const LAST_SEEN_ACTIVITY_KEY = 'fc_last_seen_activity_ts';
 
 const bgTextureStyle = {
   backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(23,52,48,0.06) 1px, transparent 0)',
@@ -132,9 +135,13 @@ export default function App() {
   const [teamsDrafted, setTeamsDrafted] = useFirestoreField('teamsDrafted', false);
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
   const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
+  const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
   const [matchPendingDelete, setMatchPendingDelete] = useState(null);
   const [draftNotice, setDraftNotice] = useState(null);
   const seenDraftEventId = useRef(null);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [lastSeenActivityTs, setLastSeenActivityTs] = useState(() => Number(localStorage.getItem(LAST_SEEN_ACTIVITY_KEY)) || 0);
+  const hasUnreadActivity = activityLog.some((entry) => entry.timestamp > lastSeenActivityTs);
 
   const [activeTab, setActiveTab] = useState('times');
   const [currentAdmin, setCurrentAdmin] = useState(null);
@@ -165,6 +172,19 @@ export default function App() {
     setTimeout(() => {
       setSystemAlert({ show: false, message: '', type: 'info' });
     }, 3000);
+  };
+
+  const logActivity = (message) => {
+    if (!currentAdmin || isViewer) return;
+    const entry = { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, adminKey: currentAdmin, message, timestamp: Date.now() };
+    setActivityLog([entry, ...activityLog].slice(0, MAX_ACTIVITY_LOG));
+  };
+
+  const handleOpenActivityLog = () => {
+    setShowActivityLog(true);
+    const now = Date.now();
+    setLastSeenActivityTs(now);
+    localStorage.setItem(LAST_SEEN_ACTIVITY_KEY, String(now));
   };
 
   useEffect(() => {
@@ -234,6 +254,7 @@ export default function App() {
     const novoTipo = player.tipo === 'Mensalista' ? 'Avulso' : 'Mensalista';
     setPlayers(players.map((p) => (p.id === playerId ? { ...p, tipo: novoTipo } : p)));
     triggerAlert(`${player.nome} agora é ${novoTipo}`, 'info');
+    logActivity(`mudou ${player.nome} para ${novoTipo}`);
   };
 
   const handleAddAvulso = (e) => {
@@ -257,16 +278,19 @@ export default function App() {
     setNewAvulsoName('');
     setShowAddAvulsoModal(false);
     triggerAlert(`${newPlayer.nome} adicionado!`, 'success');
+    logActivity(`adicionou ${newPlayer.nome} como avulso`);
   };
 
   const handleChangeCategory = (playerId, category) => {
     if (isViewer) return;
+    const player = players.find((p) => p.id === playerId);
     setPlayers(players.map((p) => {
       if (p.id !== playerId) return p;
       if (category === 'Goleiro') return { ...p, posicaoFixa: 'Goleiro' };
       if (category === 'Avulso') return { ...p, posicaoFixa: 'Linha', tipo: 'Avulso' };
       return { ...p, posicaoFixa: 'Linha', tipo: 'Mensalista' };
     }));
+    if (player) logActivity(`moveu ${player.nome} para ${category}`);
   };
 
   const handleDeletePlayer = (playerId) => {
@@ -276,6 +300,7 @@ export default function App() {
     if (!window.confirm(`Excluir ${player.nome} definitivamente?`)) return;
     setPlayers(players.filter((p) => p.id !== playerId));
     triggerAlert(`${player.nome} excluído.`, 'info');
+    logActivity(`excluiu ${player.nome}`);
   };
 
   const handleAddPlayer = (nome, category) => {
@@ -297,6 +322,7 @@ export default function App() {
     setPlayers([...players, newPlayer]);
     setShowAddPlayerModal(false);
     triggerAlert(`${newPlayer.nome} adicionado!`, 'success');
+    logActivity(`adicionou ${newPlayer.nome} (${category})`);
   };
 
   const handleEditPlayer = ({ nome, foto }) => {
@@ -304,6 +330,7 @@ export default function App() {
     setPlayers(players.map((p) => (p.id === editPlayerTarget.id ? { ...p, nome, foto } : p)));
     setEditPlayerTarget(null);
     triggerAlert('Jogador atualizado!', 'success');
+    logActivity(`editou o perfil de ${nome}`);
   };
 
   const handleApplyImport = (matchedUpdates, avulsosToAdd) => {
@@ -328,6 +355,7 @@ export default function App() {
     setPlayers([...updated, ...newAvulsos]);
     setShowImportModal(false);
     triggerAlert(`Lista aplicada! ${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s) criado(s).`, 'success');
+    logActivity(`importou a lista de presença (${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s))`);
   };
 
   const handleDraftTeams = () => {
@@ -360,6 +388,7 @@ export default function App() {
     setMatchHistory([historyRecord, ...matchHistory]);
     setLastDraftEvent({ id: historyRecord.id, adminKey: currentAdmin, timestamp: Date.now() });
     triggerAlert('Time tirado com sucesso!', 'success');
+    logActivity('tirou os times');
     setActiveTab('times');
   };
 
@@ -368,21 +397,26 @@ export default function App() {
     setTeamsDrafted(false);
     setGeneratedTeams([]);
     triggerAlert('Chamada liberada!', 'info');
+    logActivity('resetou os times (nova chamada)');
     setActiveTab('presenca');
   };
 
   const handleUpdateMatchDate = (matchId, newDate) => {
     if (!isAdmin || isViewer) return;
     setMatchHistory(matchHistory.map((m) => (m.id === matchId ? { ...m, date: new Date(newDate).toISOString() } : m)));
+    logActivity('alterou a data de um sorteio no histórico');
   };
 
   const handleToggleMatchWinner = (matchId, teamId) => {
     if (!isAdmin || isViewer) return;
+    const match = matchHistory.find((m) => m.id === matchId);
+    const team = match?.teams.find((t) => t.id === teamId);
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const winners = m.winners.includes(teamId) ? m.winners.filter((id) => id !== teamId) : [...m.winners, teamId];
       return { ...m, winners };
     }));
+    if (team) logActivity(`marcou/desmarcou ${team.name} como vencedor no histórico`);
   };
 
   const handleAddGoal = (matchId, playerId, playerNome) => {
@@ -413,6 +447,7 @@ export default function App() {
     setMatchHistory(matchHistory.filter((m) => m.id !== matchId));
     setMatchPendingDelete(null);
     triggerAlert('Sorteio excluído do histórico.', 'info');
+    logActivity('excluiu um sorteio do histórico');
   };
 
   const handleCopyTeamsText = () => {
@@ -465,6 +500,7 @@ export default function App() {
     setShowRatingModal(false);
     setRatingTargetPlayer(null);
     triggerAlert('Nota atualizada!', 'success');
+    logActivity(`avaliou ${ratingTargetPlayer.nome} (nova média ${avg})`);
   };
 
   const handleDragStart = (e, player) => {
@@ -510,7 +546,14 @@ export default function App() {
         onDismiss={() => setDraftNotice(null)}
       />
 
-      <Header isAdmin={isAdmin} currentAdmin={currentAdmin} onLogoClick={handleLogoClick} onLeaveAdmin={() => { setCurrentAdmin(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }} />
+      <Header
+        isAdmin={isAdmin}
+        currentAdmin={currentAdmin}
+        onLogoClick={handleLogoClick}
+        onLeaveAdmin={() => { setCurrentAdmin(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }}
+        hasUnreadActivity={hasUnreadActivity}
+        onOpenActivityLog={handleOpenActivityLog}
+      />
 
       <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-4">
         {activeTab === 'times' && (
@@ -649,6 +692,13 @@ export default function App() {
           message="Isso remove esse sorteio e o resultado registrado do histórico pra sempre."
           onConfirm={() => handleDeleteMatch(matchPendingDelete)}
           onClose={() => setMatchPendingDelete(null)}
+        />
+      )}
+
+      {showActivityLog && (
+        <ActivityLogModal
+          activityLog={activityLog}
+          onClose={() => setShowActivityLog(false)}
         />
       )}
     </div>
