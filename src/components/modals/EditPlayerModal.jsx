@@ -2,13 +2,15 @@ import { useRef, useState } from 'react';
 import Avatar from '../Avatar';
 import GamePhoto from '../GamePhoto';
 import BottomSheet from '../BottomSheet';
+import PhotoPositionModal from '../PhotoPositionModal';
 import Icon from '../Icon';
-import { resizeImageFile } from '../../utils/imageResize';
+import { resizeImageFile, loadImageFile } from '../../utils/imageResize';
 
 export default function EditPlayerModal({ player, onSave, onClose }) {
   const [nome, setNome] = useState(player.nome);
   const [foto, setFoto] = useState(player.foto || '');
   const [fotoJogo, setFotoJogo] = useState(player.fotoJogo || '');
+  const [cropSource, setCropSource] = useState(null);
   const fileInputRef = useRef(null);
   const fileJogoInputRef = useRef(null);
 
@@ -21,9 +23,10 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
 
   const handleFileJogoChange = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const resized = await resizeImageFile(file, 240, 320);
-    setFotoJogo(resized);
+    const loaded = await loadImageFile(file);
+    setCropSource(loaded);
   };
 
   const handleSubmit = (e) => {
@@ -115,6 +118,23 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
           </button>
         </div>
       </form>
+
+      {cropSource && (
+        <PhotoPositionModal
+          src={cropSource.src}
+          naturalWidth={cropSource.width}
+          naturalHeight={cropSource.height}
+          aspectW={3}
+          aspectH={4}
+          outputWidth={240}
+          outputHeight={320}
+          onCancel={() => setCropSource(null)}
+          onConfirm={(dataUrl) => {
+            setFotoJogo(dataUrl);
+            setCropSource(null);
+          }}
+        />
+      )}
     </BottomSheet>
   );
 }

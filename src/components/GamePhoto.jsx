@@ -9,7 +9,7 @@ function Silhouette({ className = '' }) {
 
 export default function GamePhoto({ nome, fotoJogo, className = '' }) {
   if (fotoJogo) {
-    return <img src={fotoJogo} alt={nome} className={`w-full h-full object-cover ${className}`} />;
+    return <img src={fotoJogo} alt={nome} className={`w-full h-full object-cover bg-fc-cream ${className}`} />;
   }
 
   return (

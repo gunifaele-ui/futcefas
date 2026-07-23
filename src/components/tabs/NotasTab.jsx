@@ -30,9 +30,20 @@ function IconButton({ onClick, title, icon, tone = 'neutral' }) {
 
 export default function NotasTab({ players, admins, isViewer, onOpenRatingModal, onChangeCategory, onDeletePlayer, onOpenAddPlayer, onOpenEditPlayer }) {
   const [subTab, setSubTab] = useState('Mensalista');
+  const [sortMode, setSortMode] = useState('nome');
 
   const list =
     subTab === 'Goleiro' ? players.filter((p) => p.posicaoFixa === 'Goleiro') : players.filter((p) => p.posicaoFixa === 'Linha' && p.tipo === subTab);
+
+  const sortedList = [...list].sort((a, b) =>
+    sortMode === 'nota' ? (b.notaMedia ?? 0) - (a.notaMedia ?? 0) : a.nome.localeCompare(b.nome, 'pt-BR')
+  );
+
+  const counts = {
+    Mensalista: players.filter((p) => p.posicaoFixa === 'Linha' && p.tipo === 'Mensalista').length,
+    Avulso: players.filter((p) => p.posicaoFixa === 'Linha' && p.tipo === 'Avulso').length,
+    Goleiro: players.filter((p) => p.posicaoFixa === 'Goleiro').length,
+  };
 
   return (
     <div className="space-y-3">
@@ -60,16 +71,40 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
               subTab === tab.key ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
             }`}
           >
-            {tab.label}
+            {tab.label} <span className="font-normal text-fc-muted/60">{counts[tab.key]}</span>
           </button>
         ))}
       </div>
 
+      <div className="flex items-center justify-end gap-1.5 px-0.5">
+        <span className="text-[10.5px] text-fc-muted font-medium">Ordenar</span>
+        <div className="flex gap-0.5 bg-white border border-fc-line p-0.5 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setSortMode('nome')}
+            className={`text-[10.5px] px-2 py-1 rounded-md transition ${
+              sortMode === 'nome' ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
+            }`}
+          >
+            A-Z
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortMode('nota')}
+            className={`text-[10.5px] px-2 py-1 rounded-md transition ${
+              sortMode === 'nota' ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
+            }`}
+          >
+            Nota
+          </button>
+        </div>
+      </div>
+
       <div className="space-y-1.5">
-        {list.length === 0 ? (
+        {sortedList.length === 0 ? (
           <p className="text-[12px] text-fc-muted text-center py-6">Nenhum jogador nessa categoria.</p>
         ) : (
-          list.map((p) => {
+          sortedList.map((p) => {
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];

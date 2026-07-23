@@ -12,12 +12,16 @@ function StatMenu({ options, onClose }) {
           <button
             key={opt.key}
             type="button"
+            disabled={opt.disabled}
             onClick={(e) => {
               e.stopPropagation();
+              if (opt.disabled) return;
               opt.onSelect();
               onClose();
             }}
-            className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-lg hover:bg-white/10 active:bg-white/10 text-white transition whitespace-nowrap"
+            className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-lg transition whitespace-nowrap ${
+              opt.disabled ? 'text-white/25 cursor-not-allowed' : 'text-white hover:bg-white/10 active:bg-white/10'
+            }`}
           >
             <Icon name={opt.icon} size={15} />
             <span className="text-[9px] font-medium">{opt.label}</span>
@@ -60,13 +64,7 @@ export default function PlayerStatTrigger({
   const handleDoubleClick = () => {
     clearClickTimer();
     if (!canEdit || !hasStat) return;
-    if (gols > 0 && assistencias > 0) {
-      setMenu('remove');
-    } else if (gols > 0) {
-      onRemoveGoal();
-    } else {
-      onRemoveAssist();
-    }
+    setMenu('remove');
   };
 
   const addOptions = [
@@ -74,9 +72,9 @@ export default function PlayerStatTrigger({
     { key: 'assist', icon: 'assist', label: 'Assist.', onSelect: onAddAssist },
   ];
   const removeOptions = [
-    gols > 0 && { key: 'gol', icon: 'ball', label: 'Tirar gol', onSelect: onRemoveGoal },
-    assistencias > 0 && { key: 'assist', icon: 'assist', label: 'Tirar assist.', onSelect: onRemoveAssist },
-  ].filter(Boolean);
+    { key: 'gol', icon: 'ball', label: 'Tirar gol', onSelect: onRemoveGoal, disabled: gols === 0 },
+    { key: 'assist', icon: 'assist', label: 'Tirar assist.', onSelect: onRemoveAssist, disabled: assistencias === 0 },
+  ];
 
   return (
     <div className={`relative ${className || 'inline-flex'}`}>
