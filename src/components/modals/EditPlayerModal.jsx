@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import Avatar from '../Avatar';
+import GamePhoto from '../GamePhoto';
 import BottomSheet from '../BottomSheet';
 import Icon from '../Icon';
 import { resizeImageFile } from '../../utils/imageResize';
@@ -7,7 +8,9 @@ import { resizeImageFile } from '../../utils/imageResize';
 export default function EditPlayerModal({ player, onSave, onClose }) {
   const [nome, setNome] = useState(player.nome);
   const [foto, setFoto] = useState(player.foto || '');
+  const [fotoJogo, setFotoJogo] = useState(player.fotoJogo || '');
   const fileInputRef = useRef(null);
+  const fileJogoInputRef = useRef(null);
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -16,10 +19,17 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
     setFoto(resized);
   };
 
+  const handleFileJogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const resized = await resizeImageFile(file, 240, 320);
+    setFotoJogo(resized);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!nome.trim()) return;
-    onSave({ nome: nome.trim(), foto });
+    onSave({ nome: nome.trim(), foto, fotoJogo });
   };
 
   return (
@@ -27,11 +37,12 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
       <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
         <Icon name="image" size={16} className="text-fc-dark/60" /> Editar jogador
       </h3>
-      <p className="text-[12px] text-fc-muted mb-4">Troque o nome e a foto de perfil.</p>
+      <p className="text-[12px] text-fc-muted mb-4">Troque o nome, a foto de perfil e a foto de jogo.</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col items-center gap-2.5">
           <Avatar nome={nome} foto={foto} size="w-20 h-20" textSize="text-lg" />
+          <span className="text-[10px] font-semibold text-fc-muted uppercase tracking-wide">Foto de perfil</span>
           <div className="flex gap-2">
             <button
               type="button"
@@ -51,6 +62,33 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
             )}
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+        </div>
+
+        <div className="flex flex-col items-center gap-2.5 pt-1 border-t border-fc-line">
+          <div className="w-20 h-24 rounded-xl overflow-hidden ring-1 ring-fc-line mt-3">
+            <GamePhoto nome={nome} fotoJogo={fotoJogo} />
+          </div>
+          <span className="text-[10px] font-semibold text-fc-muted uppercase tracking-wide">Foto de jogo</span>
+          <p className="text-[11px] text-fc-muted text-center -mt-1">Usada nos cards de destaque (artilheiro/assistente do mês).</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => fileJogoInputRef.current?.click()}
+              className="text-[12px] font-medium text-fc-dark bg-fc-cream hover:bg-fc-line px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+            >
+              <Icon name="image" size={13} /> Trocar foto
+            </button>
+            {fotoJogo && (
+              <button
+                type="button"
+                onClick={() => setFotoJogo('')}
+                className="text-[12px] font-medium text-fc-coraldark bg-white border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
+              >
+                Remover
+              </button>
+            )}
+          </div>
+          <input ref={fileJogoInputRef} type="file" accept="image/*" onChange={handleFileJogoChange} className="hidden" />
         </div>
 
         <input

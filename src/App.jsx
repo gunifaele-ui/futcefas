@@ -34,6 +34,21 @@ const DRAFT_CANDIDATES = 60;
 const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
 const MAX_ACTIVITY_LOG = 150;
 const LAST_SEEN_ACTIVITY_KEY = 'fc_last_seen_activity_ts';
+const ADMIN_SESSION_KEY = 'fc_admin_session';
+
+function readStoredSession() {
+  try {
+    const raw = localStorage.getItem(ADMIN_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(session) {
+  if (session) localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+  else localStorage.removeItem(ADMIN_SESSION_KEY);
+}
 
 const bgTextureStyle = {
   backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(23,52,48,0.06) 1px, transparent 0)',
@@ -153,7 +168,7 @@ export default function App() {
   const hasUnreadActivity = activityLog.some((entry) => entry.timestamp > lastSeenActivityTs);
 
   const [activeTab, setActiveTab] = useState('times');
-  const [currentAdmin, setCurrentAdmin] = useState(null);
+  const [currentAdmin, setCurrentAdmin] = useState(() => readStoredSession()?.key ?? null);
   const isAdmin = currentAdmin !== null;
   const isViewer = currentAdmin === VIEWER_KEY;
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -197,6 +212,23 @@ export default function App() {
   };
 
   useEffect(() => {
+    const session = readStoredSession();
+    if (!session) return;
+    if (session.key === VIEWER_KEY) return;
+    const admin = admins.find((a) => a.key === session.key);
+    if (admin && admin.password === session.password) {
+      if (currentAdmin !== admin.key) setCurrentAdmin(admin.key);
+    } else {
+      writeStoredSession(null);
+      if (currentAdmin === session.key) {
+        setCurrentAdmin(null);
+        setActiveTab('times');
+        triggerAlert('Sua senha foi alterada por um ADM. Entre novamente.', 'info');
+      }
+    }
+  }, [admins]);
+
+  useEffect(() => {
     if (!lastDraftEvent) return;
     if (seenDraftEventId.current === null) {
       seenDraftEventId.current = lastDraftEvent.id;
@@ -225,6 +257,7 @@ export default function App() {
       clicks.count = 0;
       if (isAdmin) {
         setCurrentAdmin(null);
+        writeStoredSession(null);
         setActiveTab('times');
         triggerAlert('Modo ADM Desativado', 'info');
       } else {
@@ -239,11 +272,13 @@ export default function App() {
     const match = admins.find((a) => a.password.trim().toLowerCase() === key);
     if (match) {
       setCurrentAdmin(match.key);
+      writeStoredSession({ key: match.key, password: match.password });
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
     } else if (key === VIEWER_KEY) {
       setCurrentAdmin(VIEWER_KEY);
+      writeStoredSession({ key: VIEWER_KEY });
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
@@ -287,10 +322,23 @@ export default function App() {
     setAdmins(admins.filter((a) => a.key !== adminPendingDelete));
     if (currentAdmin === adminPendingDelete) {
       setCurrentAdmin(null);
+      writeStoredSession(null);
       setActiveTab('times');
     }
     logActivity(`excluiu o ADM ${admin.label}`);
     setAdminPendingDelete(null);
+  };
+
+  const handleEditAdminPassword = (key, newPassword) => {
+    if (!newPassword.trim()) return { error: 'Digite a nova senha.' };
+    const admin = admins.find((a) => a.key === key);
+    if (!admin) return { error: 'ADM não encontrado.' };
+    const senha = newPassword.trim();
+    setAdmins(admins.map((a) => (a.key === key ? { ...a, password: senha } : a)));
+    logActivity(`redefiniu a senha do ADM ${admin.label}`);
+    if (key === currentAdmin) writeStoredSession({ key, password: senha });
+    triggerAlert(`Senha de ${admin.label} atualizada!`, 'success');
+    return {};
   };
 
   const handleTogglePresence = (playerId) => {
@@ -378,9 +426,9 @@ export default function App() {
     logActivity(`adicionou ${newPlayer.nome} (${category})`);
   };
 
-  const handleEditPlayer = ({ nome, foto }) => {
+  const handleEditPlayer = ({ nome, foto, fotoJogo }) => {
     if (isViewer || !editPlayerTarget) return;
-    setPlayers(players.map((p) => (p.id === editPlayerTarget.id ? { ...p, nome, foto } : p)));
+    setPlayers(players.map((p) => (p.id === editPlayerTarget.id ? { ...p, nome, foto, fotoJogo } : p)));
     setEditPlayerTarget(null);
     triggerAlert('Jogador atualizado!', 'success');
     logActivity(`editou o perfil de ${nome}`);
@@ -429,7 +477,6 @@ export default function App() {
         ratingSum: t.ratingSum,
         players: t.players.map((p) => ({ id: p.id, nome: p.nome })),
       })),
-      winners: [],
       goals: [],
     };
 
@@ -457,26 +504,14 @@ export default function App() {
     logActivity('alterou a data de um sorteio no histórico');
   };
 
-  const handleToggleMatchWinner = (matchId, teamId) => {
-    if (!isAdmin || isViewer) return;
-    const match = matchHistory.find((m) => m.id === matchId);
-    const team = match?.teams.find((t) => t.id === teamId);
-    setMatchHistory(matchHistory.map((m) => {
-      if (m.id !== matchId) return m;
-      const winners = m.winners.includes(teamId) ? m.winners.filter((id) => id !== teamId) : [...m.winners, teamId];
-      return { ...m, winners };
-    }));
-    if (team) logActivity(`marcou/desmarcou ${team.name} como vencedor no histórico`);
-  };
-
   const handleAddGoal = (matchId, playerId, playerNome) => {
     if (!isAdmin || isViewer) return;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const existing = m.goals.find((g) => g.playerId === playerId);
       const goals = existing
-        ? m.goals.map((g) => (g.playerId === playerId ? { ...g, gols: g.gols + 1 } : g))
-        : [...m.goals, { playerId, nome: playerNome, gols: 1 }];
+        ? m.goals.map((g) => (g.playerId === playerId ? { ...g, gols: (g.gols || 0) + 1 } : g))
+        : [...m.goals, { playerId, nome: playerNome, gols: 1, assistencias: 0 }];
       return { ...m, goals };
     }));
   };
@@ -486,9 +521,64 @@ export default function App() {
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const goals = m.goals
-        .map((g) => (g.playerId === playerId ? { ...g, gols: g.gols - 1 } : g))
-        .filter((g) => g.gols > 0);
+        .map((g) => (g.playerId === playerId ? { ...g, gols: (g.gols || 0) - 1 } : g))
+        .filter((g) => (g.gols || 0) > 0 || (g.assistencias || 0) > 0);
       return { ...m, goals };
+    }));
+  };
+
+  const handleAddAssist = (matchId, playerId, playerNome) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      const existing = m.goals.find((g) => g.playerId === playerId);
+      const goals = existing
+        ? m.goals.map((g) => (g.playerId === playerId ? { ...g, assistencias: (g.assistencias || 0) + 1 } : g))
+        : [...m.goals, { playerId, nome: playerNome, gols: 0, assistencias: 1 }];
+      return { ...m, goals };
+    }));
+  };
+
+  const handleRemoveAssist = (matchId, playerId) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      const goals = m.goals
+        .map((g) => (g.playerId === playerId ? { ...g, assistencias: (g.assistencias || 0) - 1 } : g))
+        .filter((g) => (g.gols || 0) > 0 || (g.assistencias || 0) > 0);
+      return { ...m, goals };
+    }));
+  };
+
+  function resultCount(match, teamId, type) {
+    const team = match.teams.find((t) => t.id === teamId);
+    if (!team) return 0;
+    if (typeof team[type] === 'number') return team[type];
+    if (type === 'vitorias' && match.winners?.includes(teamId)) return 1;
+    return 0;
+  }
+
+  const handleAddResult = (matchId, teamId, type) => {
+    if (!isAdmin || isViewer) return;
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!match) return;
+    const nextValue = resultCount(match, teamId, type) + 1;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      return { ...m, teams: m.teams.map((t) => (t.id === teamId ? { ...t, [type]: nextValue } : t)) };
+    }));
+    const team = match.teams.find((t) => t.id === teamId);
+    if (team) logActivity(`marcou ${type === 'vitorias' ? 'uma vitória' : 'um empate'} pro ${team.name}`);
+  };
+
+  const handleRemoveResult = (matchId, teamId, type) => {
+    if (!isAdmin || isViewer) return;
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!match) return;
+    const nextValue = Math.max(0, resultCount(match, teamId, type) - 1);
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      return { ...m, teams: m.teams.map((t) => (t.id === teamId ? { ...t, [type]: nextValue } : t)) };
     }));
   };
 
@@ -604,7 +694,7 @@ export default function App() {
         currentAdmin={currentAdmin}
         admins={admins}
         onLogoClick={handleLogoClick}
-        onLeaveAdmin={() => { setCurrentAdmin(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }}
+        onLeaveAdmin={() => { setCurrentAdmin(null); writeStoredSession(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }}
         hasUnreadActivity={hasUnreadActivity}
         onOpenActivityLog={handleOpenActivityLog}
         onOpenSettings={() => setShowSettingsModal(true)}
@@ -616,12 +706,19 @@ export default function App() {
             players={players}
             generatedTeams={generatedTeams}
             teamsDrafted={teamsDrafted}
+            currentMatch={teamsDrafted ? matchHistory[0] : null}
             isAdmin={isAdmin}
             isViewer={isViewer}
             copied={copied}
             onCopyTeams={handleCopyTeamsText}
             onResetTeams={handleResetTeams}
             onGoToHistory={() => setActiveTab('estatisticas')}
+            onAddGoal={handleAddGoal}
+            onRemoveGoal={handleRemoveGoal}
+            onAddAssist={handleAddAssist}
+            onRemoveAssist={handleRemoveAssist}
+            onAddResult={handleAddResult}
+            onRemoveResult={handleRemoveResult}
           />
         )}
 
@@ -664,13 +761,17 @@ export default function App() {
         {activeTab === 'estatisticas' && (
           <EstatisticasTab
             matchHistory={matchHistory}
+            players={players}
             isAdmin={isAdmin}
             isViewer={isViewer}
             onRequestDeleteMatch={(matchId) => setMatchPendingDelete(matchId)}
             onUpdateDate={handleUpdateMatchDate}
-            onToggleWinner={handleToggleMatchWinner}
+            onAddResult={handleAddResult}
+            onRemoveResult={handleRemoveResult}
             onAddGoal={handleAddGoal}
             onRemoveGoal={handleRemoveGoal}
+            onAddAssist={handleAddAssist}
+            onRemoveAssist={handleRemoveAssist}
           />
         )}
       </main>
@@ -766,6 +867,7 @@ export default function App() {
           onAddAdmin={handleAddAdmin}
           onToggleHidden={handleToggleAdminHidden}
           onDeleteAdmin={handleDeleteAdmin}
+          onEditPassword={handleEditAdminPassword}
           onClose={() => setShowSettingsModal(false)}
         />
       )}
