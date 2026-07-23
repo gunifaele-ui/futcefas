@@ -12,7 +12,7 @@ function TeamCard({ team }) {
       <div className="flex flex-wrap gap-3">
         {team.players.map((p) => (
           <div key={p.id} className="flex flex-col items-center gap-1 w-14 shrink-0">
-            <Avatar nome={p.nome} size="w-10 h-10" textSize="text-[10px]" />
+            <Avatar nome={p.nome} foto={p.foto} size="w-10 h-10" textSize="text-[10px]" />
             <span className="text-[9px] font-bold text-fc-dark text-center leading-tight break-words w-full">{p.nome}</span>
           </div>
         ))}
@@ -21,7 +21,7 @@ function TeamCard({ team }) {
   );
 }
 
-export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmin, copied, onCopyTeams, onResetTeams, onOpenResultModal }) {
+export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmin, isViewer, copied, onCopyTeams, onResetTeams, onOpenResultModal }) {
   const goleirosPresentes = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Goleiro');
 
   return (
@@ -72,7 +72,7 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
             ) : (
               goleirosPresentes.map((g) => (
                 <span key={g.id} className="bg-orange-50 border border-orange-100 text-fc-coraldark text-[10px] font-black pl-1 pr-2.5 py-1 rounded-full flex items-center gap-1.5">
-                  <Avatar nome={g.nome} size="w-5 h-5" textSize="text-[7px]" />
+                  <Avatar nome={g.nome} foto={g.foto} size="w-5 h-5" textSize="text-[7px]" />
                   {g.nome}
                 </span>
               ))
@@ -81,7 +81,7 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
         </div>
       )}
 
-      {isAdmin && teamsDrafted && (
+      {isAdmin && !isViewer && teamsDrafted && (
         <div className="pt-2 space-y-2">
           <button
             onClick={onOpenResultModal}

@@ -7,7 +7,9 @@ export default function AdminModal({ passwordInput, setPasswordInput, adminError
   return (
     <BottomSheet onClose={onClose}>
       <h3 className="font-black text-sm text-fc-dark mb-1">🔐 Entrar como ADM</h3>
-      <p className="text-[11px] text-slate-400 mb-4 font-bold">Digite sua senha pessoal (Gustavo, Miguel ou Enzo).</p>
+      <p className="text-[11px] text-slate-400 mb-4 font-bold">
+        Digite sua senha pessoal (Gustavo, Miguel ou Enzo), ou "visualizar" pra entrar só pra ver, sem poder editar nada.
+      </p>
 
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="relative">

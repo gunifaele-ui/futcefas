@@ -26,7 +26,7 @@ export default function SearchModal({ searchQuery, setSearchQuery, filteredList,
               className="p-2.5 rounded-xl bg-fc-cream border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-fc-limesoft/40 transition gap-2"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <Avatar nome={p.nome} size="w-7 h-7" textSize="text-[9px]" />
+                <Avatar nome={p.nome} foto={p.foto} size="w-7 h-7" textSize="text-[9px]" />
                 <span className="text-xs font-bold text-fc-dark break-words min-w-0">{p.nome}</span>
               </div>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${p.statusPresenca ? 'bg-fc-limesoft text-fc-dark' : 'bg-slate-200 text-slate-500'}`}>

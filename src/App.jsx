@@ -13,11 +13,14 @@ import AddAvulsoModal from './components/modals/AddAvulsoModal';
 import RatingModal from './components/modals/RatingModal';
 import ImportAttendanceModal from './components/modals/ImportAttendanceModal';
 import RegisterResultModal from './components/modals/RegisterResultModal';
+import AddPlayerModal from './components/modals/AddPlayerModal';
+import EditPlayerModal from './components/modals/EditPlayerModal';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
 
 const MIN_JOGADORES_LINHA = 15;
 const LIMIAR_QUATRO_TIMES = 15;
 const ADMIN_KEYS = ['gustavo', 'miguel', 'enzo'];
+const VIEWER_KEY = 'visualizar';
 const DRAFT_JITTER = 0.6;
 
 const bgTextureStyle = {
@@ -35,6 +38,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('times');
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const isAdmin = currentAdmin !== null;
+  const isViewer = currentAdmin === VIEWER_KEY;
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [adminError, setAdminError] = useState('');
@@ -49,6 +53,9 @@ export default function App() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingTargetPlayer, setRatingTargetPlayer] = useState(null);
   const [tempNotes, setTempNotes] = useState({ gustavo: 7.0, enzo: 7.0, miguel: 7.0 });
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
+  const [addPlayerCategory, setAddPlayerCategory] = useState('Mensalista');
+  const [editPlayerTarget, setEditPlayerTarget] = useState(null);
   const [systemAlert, setSystemAlert] = useState({ show: false, message: '', type: 'info' });
   const [copied, setCopied] = useState(false);
 
@@ -84,7 +91,7 @@ export default function App() {
   const handleAdminAuth = (e) => {
     e.preventDefault();
     const key = passwordInput.trim().toLowerCase();
-    if (ADMIN_KEYS.includes(key)) {
+    if (ADMIN_KEYS.includes(key) || key === VIEWER_KEY) {
       setCurrentAdmin(key);
       setShowAdminModal(false);
       setPasswordInput('');
@@ -95,14 +102,17 @@ export default function App() {
   };
 
   const handleTogglePresence = (playerId) => {
+    if (isViewer) return;
     setPlayers(players.map((p) => (p.id === playerId ? { ...p, statusPresenca: !p.statusPresenca } : p)));
   };
 
   const handleToggleAllInPosition = (posicaoFixa, selectAll) => {
+    if (isViewer) return;
     setPlayers(players.map((p) => (p.posicaoFixa === posicaoFixa ? { ...p, statusPresenca: selectAll } : p)));
   };
 
   const handleToggleTipo = (playerId) => {
+    if (isViewer) return;
     const player = players.find((p) => p.id === playerId);
     if (!player) return;
     const novoTipo = player.tipo === 'Mensalista' ? 'Avulso' : 'Mensalista';
@@ -112,6 +122,7 @@ export default function App() {
 
   const handleAddAvulso = (e) => {
     e.preventDefault();
+    if (isViewer) return;
     if (!newAvulsoName.trim()) return;
 
     const newPlayer = {
@@ -133,6 +144,7 @@ export default function App() {
   };
 
   const handleChangeCategory = (playerId, category) => {
+    if (isViewer) return;
     setPlayers(players.map((p) => {
       if (p.id !== playerId) return p;
       if (category === 'Goleiro') return { ...p, posicaoFixa: 'Goleiro' };
@@ -142,6 +154,7 @@ export default function App() {
   };
 
   const handleDeletePlayer = (playerId) => {
+    if (isViewer) return;
     const player = players.find((p) => p.id === playerId);
     if (!player) return;
     if (!window.confirm(`Excluir ${player.nome} definitivamente?`)) return;
@@ -149,7 +162,36 @@ export default function App() {
     triggerAlert(`${player.nome} excluído.`, 'info');
   };
 
+  const handleAddPlayer = (nome, category) => {
+    if (isViewer) return;
+    if (!nome.trim()) return;
+
+    const posicaoFixa = category === 'Goleiro' ? 'Goleiro' : 'Linha';
+    const tipo = category === 'Avulso' ? 'Avulso' : 'Mensalista';
+
+    const newPlayer = {
+      id: `p-${Date.now()}`,
+      nome: nome.trim(),
+      tipo,
+      posicaoFixa,
+      statusPresenca: false,
+      ...(posicaoFixa === 'Linha' && { notaEnzo: 7.0, notaGustavo: 7.0, notaMiguel: 7.0, notaMedia: 7.0 }),
+    };
+
+    setPlayers([...players, newPlayer]);
+    setShowAddPlayerModal(false);
+    triggerAlert(`${newPlayer.nome} adicionado!`, 'success');
+  };
+
+  const handleEditPlayer = ({ nome, foto }) => {
+    if (isViewer || !editPlayerTarget) return;
+    setPlayers(players.map((p) => (p.id === editPlayerTarget.id ? { ...p, nome, foto } : p)));
+    setEditPlayerTarget(null);
+    triggerAlert('Jogador atualizado!', 'success');
+  };
+
   const handleApplyImport = (matchedUpdates, avulsosToAdd) => {
+    if (isViewer) return;
     const updated = players.map((p) => {
       const update = matchedUpdates.find((m) => m.playerId === p.id);
       return update ? { ...p, statusPresenca: update.present } : p;
@@ -173,7 +215,7 @@ export default function App() {
   };
 
   const handleDraftTeams = () => {
-    if (!isAdmin) return;
+    if (!isAdmin || isViewer) return;
     const linePresent = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Linha');
 
     if (linePresent.length < MIN_JOGADORES_LINHA) {
@@ -217,6 +259,7 @@ export default function App() {
   };
 
   const handleResetTeams = () => {
+    if (isViewer) return;
     setTeamsDrafted(false);
     setGeneratedTeams([]);
     triggerAlert('Chamada liberada!', 'info');
@@ -224,6 +267,7 @@ export default function App() {
   };
 
   const handleSaveResult = (winners, goalRows) => {
+    if (isViewer) return;
     const allPlayers = generatedTeams.flatMap((t) => t.players);
     const goals = goalRows
       .filter((g) => g.playerId && g.gols > 0)
@@ -288,7 +332,7 @@ export default function App() {
   };
 
   const handleSaveRatings = () => {
-    if (!ratingTargetPlayer) return;
+    if (isViewer || !ratingTargetPlayer) return;
 
     const notaGustavo = currentAdmin === 'gustavo' ? tempNotes.gustavo : ratingTargetPlayer.notaGustavo ?? 7.0;
     const notaEnzo = currentAdmin === 'enzo' ? tempNotes.enzo : ratingTargetPlayer.notaEnzo ?? 7.0;
@@ -312,6 +356,7 @@ export default function App() {
 
   const handleDrop = (e, targetPos) => {
     e.preventDefault();
+    if (isViewer) return;
     const playerId = e.dataTransfer.getData('text/plain');
     if (!playerId) return;
 
@@ -348,6 +393,7 @@ export default function App() {
             generatedTeams={generatedTeams}
             teamsDrafted={teamsDrafted}
             isAdmin={isAdmin}
+            isViewer={isViewer}
             copied={copied}
             onCopyTeams={handleCopyTeamsText}
             onResetTeams={handleResetTeams}
@@ -358,6 +404,7 @@ export default function App() {
         {activeTab === 'presenca' && isAdmin && (
           <PresencaTab
             players={players}
+            isViewer={isViewer}
             linePlayersList={linePlayersList}
             goalkeepersList={goalkeepersList}
             presentCount={presentCount}
@@ -381,9 +428,12 @@ export default function App() {
         {activeTab === 'notas' && isAdmin && (
           <NotasTab
             players={players}
+            isViewer={isViewer}
             onOpenRatingModal={handleOpenRatingModal}
             onChangeCategory={handleChangeCategory}
             onDeletePlayer={handleDeletePlayer}
+            onOpenAddPlayer={(category) => { setAddPlayerCategory(category); setShowAddPlayerModal(true); }}
+            onOpenEditPlayer={(player) => setEditPlayerTarget(player)}
           />
         )}
 
@@ -445,6 +495,22 @@ export default function App() {
           teams={generatedTeams}
           onSave={handleSaveResult}
           onClose={() => setShowResultModal(false)}
+        />
+      )}
+
+      {showAddPlayerModal && (
+        <AddPlayerModal
+          defaultCategory={addPlayerCategory}
+          onSubmit={handleAddPlayer}
+          onClose={() => setShowAddPlayerModal(false)}
+        />
+      )}
+
+      {editPlayerTarget && (
+        <EditPlayerModal
+          player={editPlayerTarget}
+          onSave={handleEditPlayer}
+          onClose={() => setEditPlayerTarget(null)}
         />
       )}
     </div>

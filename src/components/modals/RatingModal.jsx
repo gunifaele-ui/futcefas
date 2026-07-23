@@ -13,7 +13,7 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
   return (
     <BottomSheet onClose={onClose}>
       <div className="flex items-center gap-2.5 mb-1">
-        <Avatar nome={player.nome} size="w-9 h-9" />
+        <Avatar nome={player.nome} foto={player.foto} size="w-9 h-9" />
         <h3 className="font-black text-sm text-fc-dark">Mudar nota de {player.nome}</h3>
       </div>
       <p className="text-[11px] text-slate-400 mb-4 font-bold">Arraste pra ajustar sua nota (1.0 a 10.0). Só dá pra mudar a nota do ADM logado.</p>

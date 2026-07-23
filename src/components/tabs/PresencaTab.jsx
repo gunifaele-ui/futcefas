@@ -15,10 +15,11 @@ function SelectAllButton({ allSelected, onClick, tone }) {
   );
 }
 
-function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColor, subLabel, subLabelColor }) {
+function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColor, subLabel, subLabelColor, isViewer }) {
   const clickTrack = useRef({ count: 0, lastClick: 0 });
 
   const handleClick = () => {
+    if (isViewer) return;
     onToggle(p.id);
 
     const now = Date.now();
@@ -35,17 +36,17 @@ function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColo
   return (
     <div
       key={p.id}
-      draggable
+      draggable={!isViewer}
       onDragStart={(e) => onDragStart(e, p)}
       onClick={handleClick}
-      className={`p-2 rounded-2xl text-center cursor-pointer transition relative border flex flex-col items-center gap-1 min-w-0 ${
+      className={`p-2 rounded-2xl text-center transition relative border flex flex-col items-center gap-1 min-w-0 ${isViewer ? '' : 'cursor-pointer'} ${
         p.statusPresenca ? palette.active : palette.inactive
       }`}
     >
       {p.statusPresenca && (
         <span className={`absolute -top-1.5 -right-1.5 w-4 h-4 ${badgeColor} rounded-full flex items-center justify-center text-white text-[8px] font-black shadow-sm ring-2 ring-white`}>✓</span>
       )}
-      <Avatar nome={p.nome} size="w-8 h-8" textSize="text-[9px]" />
+      <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
       <span className="text-[10px] leading-tight font-black break-words hyphens-auto block w-full mt-0.5">{p.nome}</span>
       <span className={`text-[7px] font-extrabold uppercase block ${subLabelColor}`}>{subLabel}</span>
     </div>
@@ -54,6 +55,7 @@ function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColo
 
 export default function PresencaTab({
   players,
+  isViewer,
   linePlayersList,
   goalkeepersList,
   presentCount,
@@ -78,36 +80,40 @@ export default function PresencaTab({
         <div className="flex justify-between items-center mb-1">
           <div>
             <h2 className="text-base font-black text-fc-dark tracking-tight">Lista de quem vai</h2>
-            <p className="text-[10px] text-slate-400 font-bold mt-0.5">Só clicar no nome pra colocar a presença.</p>
+            <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+              {isViewer ? 'Modo visualização — sem edição.' : 'Só clicar no nome pra colocar a presença.'}
+            </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={onOpenSearch}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs active:scale-95 transition shadow-sm"
-            >
-              🔍
-            </button>
+          {!isViewer && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onOpenSearch}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs active:scale-95 transition shadow-sm"
+              >
+                🔍
+              </button>
 
-            <button
-              onClick={onOpenImport}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs active:scale-95 transition shadow-sm"
-            >
-              📋
-            </button>
+              <button
+                onClick={onOpenImport}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs active:scale-95 transition shadow-sm"
+              >
+                📋
+              </button>
 
-            <button
-              onClick={onOpenAddAvulso}
-              className="bg-fc-coral hover:bg-fc-coraldark text-white text-[10px] font-black px-3 py-2 rounded-full active:scale-95 transition shadow-sm"
-            >
-              + Avulso
-            </button>
-          </div>
+              <button
+                onClick={onOpenAddAvulso}
+                className="bg-fc-coral hover:bg-fc-coraldark text-white text-[10px] font-black px-3 py-2 rounded-full active:scale-95 transition shadow-sm"
+              >
+                + Avulso
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mt-2.5 bg-fc-limesoft/50 rounded-2xl p-2.5 border border-fc-limesoft flex justify-between items-center text-xs">
           <span className="font-extrabold text-fc-dark">{presentCount} vão hoje</span>
-          <span className="text-[10px] text-fc-dark/70 font-bold">Arraste entre as listas para alterar posição</span>
+          {!isViewer && <span className="text-[10px] text-fc-dark/70 font-bold">Arraste entre as listas para alterar posição</span>}
         </div>
       </div>
 
@@ -120,11 +126,13 @@ export default function PresencaTab({
           <span className="text-[10px] font-black uppercase tracking-wider text-fc-coraldark flex items-center gap-1">
             <span>🧤</span> Goleiros ({goalkeepersList.filter((p) => p.statusPresenca).length} presentes)
           </span>
-          <SelectAllButton
-            allSelected={allGoalkeepersPresent}
-            onClick={onToggleAllGoalkeepers}
-            tone="bg-orange-50 border-orange-200 text-fc-coraldark"
-          />
+          {!isViewer && (
+            <SelectAllButton
+              allSelected={allGoalkeepersPresent}
+              onClick={onToggleAllGoalkeepers}
+              tone="bg-orange-50 border-orange-200 text-fc-coraldark"
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -132,6 +140,7 @@ export default function PresencaTab({
             <PlayerChip
               key={p.id}
               p={p}
+              isViewer={isViewer}
               onDragStart={onDragStart}
               onToggle={onTogglePresence}
               onToggleTipo={onToggleTipo}
@@ -156,11 +165,13 @@ export default function PresencaTab({
           <span className="text-[10px] font-black uppercase tracking-wider text-fc-dark flex items-center gap-1">
             <span>🏃</span> Jogadores de Linha ({linePlayersList.filter((p) => p.statusPresenca).length} presentes)
           </span>
-          <SelectAllButton
-            allSelected={allLinePresent}
-            onClick={onToggleAllLine}
-            tone="bg-fc-limesoft/50 border-fc-limesoft text-fc-dark"
-          />
+          {!isViewer && (
+            <SelectAllButton
+              allSelected={allLinePresent}
+              onClick={onToggleAllLine}
+              tone="bg-fc-limesoft/50 border-fc-limesoft text-fc-dark"
+            />
+          )}
         </div>
         <p className="text-[9px] text-fc-dark/60 font-bold px-1 mb-2">{requiredCount} necessários pro sorteio</p>
 
@@ -171,6 +182,7 @@ export default function PresencaTab({
               <PlayerChip
                 key={p.id}
                 p={p}
+                isViewer={isViewer}
                 onDragStart={onDragStart}
                 onToggle={onTogglePresence}
                 onToggleTipo={onToggleTipo}
@@ -195,6 +207,7 @@ export default function PresencaTab({
                   <PlayerChip
                     key={p.id}
                     p={p}
+                    isViewer={isViewer}
                     onDragStart={onDragStart}
                     onToggle={onTogglePresence}
                     onToggleTipo={onToggleTipo}
@@ -212,14 +225,16 @@ export default function PresencaTab({
         )}
       </div>
 
-      <div className="pt-2">
-        <button
-          onClick={onDraftTeams}
-          className="w-full bg-fc-lime hover:brightness-95 text-fc-dark font-black py-4 rounded-full shadow-md active:scale-95 transition text-xs uppercase tracking-wider"
-        >
-          ⚽ Tirar time
-        </button>
-      </div>
+      {!isViewer && (
+        <div className="pt-2">
+          <button
+            onClick={onDraftTeams}
+            className="w-full bg-fc-lime hover:brightness-95 text-fc-dark font-black py-4 rounded-full shadow-md active:scale-95 transition text-xs uppercase tracking-wider"
+          >
+            ⚽ Tirar time
+          </button>
+        </div>
+      )}
     </div>
   );
 }
