@@ -66,15 +66,13 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
     <div className="space-y-3">
       {showPixCard && <PixCard />}
 
-      <div className="bg-white rounded-2xl p-5 border border-fc-line shadow-card relative">
-        <div className="text-center">
-          <span className="inline-flex w-10 h-10 rounded-full bg-fc-cream items-center justify-center text-fc-dark/70 mb-2">
-            <Icon name={teamsDrafted ? 'trophy' : 'clock'} size={19} />
-          </span>
-          <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">
-            {teamsDrafted ? 'Times escalados' : 'Time vai ser tirado jajá'}
-          </h2>
-        </div>
+      <div className="bg-white rounded-2xl p-3.5 border border-fc-line shadow-card relative flex items-center justify-center gap-2.5">
+        <span className="inline-flex w-8 h-8 rounded-full bg-fc-cream items-center justify-center text-fc-dark/70 shrink-0">
+          <Icon name={teamsDrafted ? 'trophy' : 'clock'} size={16} />
+        </span>
+        <h2 className="text-[14px] font-semibold text-fc-dark tracking-tight">
+          {teamsDrafted ? 'Times escalados' : 'Time vai ser tirado jajá'}
+        </h2>
 
         {teamsDrafted && (
           <button

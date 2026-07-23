@@ -522,7 +522,6 @@ export default function App() {
 
   const linePlayersList = useMemo(() => players.filter((p) => p.posicaoFixa === 'Linha'), [players]);
   const goalkeepersList = useMemo(() => players.filter((p) => p.posicaoFixa === 'Goleiro'), [players]);
-  const presentCount = useMemo(() => players.filter((p) => p.statusPresenca).length, [players]);
   const allLinePresent = linePlayersList.length > 0 && linePlayersList.every((p) => p.statusPresenca);
   const allGoalkeepersPresent = goalkeepersList.length > 0 && goalkeepersList.every((p) => p.statusPresenca);
 
@@ -576,7 +575,6 @@ export default function App() {
             isViewer={isViewer}
             linePlayersList={linePlayersList}
             goalkeepersList={goalkeepersList}
-            presentCount={presentCount}
             requiredCount={MIN_JOGADORES_LINHA}
             allLinePresent={allLinePresent}
             allGoalkeepersPresent={allGoalkeepersPresent}

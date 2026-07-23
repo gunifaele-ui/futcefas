@@ -61,7 +61,6 @@ export default function PresencaTab({
   isViewer,
   linePlayersList,
   goalkeepersList,
-  presentCount,
   requiredCount,
   onTogglePresence,
   onToggleTipo,
@@ -77,6 +76,9 @@ export default function PresencaTab({
   onOpenImport,
   onDraftTeams,
 }) {
+  const linePresentCount = linePlayersList.filter((p) => p.statusPresenca).length;
+  const goalkeeperPresentCount = goalkeepersList.filter((p) => p.statusPresenca).length;
+
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
@@ -117,7 +119,10 @@ export default function PresencaTab({
         </div>
 
         <div className="mt-3 bg-fc-limesoft rounded-xl px-3 py-2.5 flex justify-between items-center gap-2">
-          <span className="text-[13px] font-semibold text-fc-dark">{presentCount} vão hoje</span>
+          <span className="text-[13px] font-semibold text-fc-dark">
+            {linePresentCount} {linePresentCount === 1 ? 'pessoa vai' : 'pessoas vão'} hoje
+            {goalkeeperPresentCount > 0 && ` + ${goalkeeperPresentCount} ${goalkeeperPresentCount === 1 ? 'goleiro' : 'goleiros'}`}
+          </span>
           {!isViewer && <span className="text-[11px] text-fc-dark/60">Arraste entre as listas para trocar posição</span>}
         </div>
       </div>

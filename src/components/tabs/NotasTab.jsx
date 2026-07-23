@@ -38,7 +38,7 @@ export default function NotasTab({ players, isViewer, onOpenRatingModal, onChang
       <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card flex items-center justify-between gap-2">
         <div>
           <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Mudar nota</h2>
-          <p className="text-[11px] text-fc-muted mt-0.5">Painel dos ADMs Gustavo, Enzo e Miguel.</p>
+          <p className="text-[11px] text-fc-muted mt-0.5">Nota média formada pela média das notas dos ADMs.</p>
         </div>
         {!isViewer && (
           <button
