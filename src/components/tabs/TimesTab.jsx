@@ -61,18 +61,23 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
   const goleirosPresentes = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Goleiro');
   const showPixCard = !isAdmin || isViewer;
   const [showSorteioInfo, setShowSorteioInfo] = useState(false);
+  const totalLinePlayers = generatedTeams.reduce((sum, t) => sum + t.players.length, 0);
 
   return (
     <div className="space-y-3">
       {showPixCard && <PixCard />}
 
-      <div className="bg-white rounded-2xl p-3.5 border border-fc-line shadow-card relative flex items-center justify-center gap-2.5">
-        <span className="inline-flex w-8 h-8 rounded-full bg-fc-cream items-center justify-center text-fc-dark/70 shrink-0">
-          <Icon name={teamsDrafted ? 'trophy' : 'clock'} size={16} />
-        </span>
-        <h2 className="text-[14px] font-semibold text-fc-dark tracking-tight">
-          {teamsDrafted ? 'Times escalados' : 'Time vai ser tirado jajá'}
-        </h2>
+      <div className="bg-white rounded-2xl p-3.5 border border-fc-line shadow-card relative flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-[14px] font-semibold text-fc-dark tracking-tight">
+            {teamsDrafted ? 'Times escalados' : 'Time vai ser tirado jajá'}
+          </h2>
+          {teamsDrafted && (
+            <p className="text-[11px] text-fc-muted mt-0.5">
+              {generatedTeams.length} times, {totalLinePlayers} jogadores + {goleirosPresentes.length} goleiros
+            </p>
+          )}
+        </div>
 
         {teamsDrafted && (
           <button
