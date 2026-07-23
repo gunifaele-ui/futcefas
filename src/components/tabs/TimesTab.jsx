@@ -21,7 +21,7 @@ function TeamCard({ team }) {
   );
 }
 
-export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmin, copied, onCopyTeams, onResetTeams }) {
+export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmin, copied, onCopyTeams, onResetTeams, onOpenResultModal }) {
   const goleirosPresentes = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Goleiro');
 
   return (
@@ -61,26 +61,34 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-3.5 shadow-sm">
-        <span className="text-[9px] font-black uppercase tracking-wider text-fc-coraldark bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
-          🧤 Goleiros Soltos
-        </span>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {goleirosPresentes.length === 0 ? (
-            <span className="text-[10px] text-slate-400 italic">Nenhum goleiro confirmado.</span>
-          ) : (
-            goleirosPresentes.map((g) => (
-              <span key={g.id} className="bg-orange-50 border border-orange-100 text-fc-coraldark text-[10px] font-black pl-1 pr-2.5 py-1 rounded-full flex items-center gap-1.5">
-                <Avatar nome={g.nome} size="w-5 h-5" textSize="text-[7px]" />
-                {g.nome}
-              </span>
-            ))
-          )}
+      {teamsDrafted && (
+        <div className="bg-white rounded-3xl p-3.5 shadow-sm">
+          <span className="text-[9px] font-black uppercase tracking-wider text-fc-coraldark bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
+            🧤 Goleiros
+          </span>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {goleirosPresentes.length === 0 ? (
+              <span className="text-[10px] text-slate-400 italic">Nenhum goleiro confirmado.</span>
+            ) : (
+              goleirosPresentes.map((g) => (
+                <span key={g.id} className="bg-orange-50 border border-orange-100 text-fc-coraldark text-[10px] font-black pl-1 pr-2.5 py-1 rounded-full flex items-center gap-1.5">
+                  <Avatar nome={g.nome} size="w-5 h-5" textSize="text-[7px]" />
+                  {g.nome}
+                </span>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isAdmin && teamsDrafted && (
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
+          <button
+            onClick={onOpenResultModal}
+            className="w-full bg-fc-dark hover:bg-fc-dark2 text-white font-black py-3 rounded-full text-xs uppercase tracking-wider shadow-sm active:scale-95 transition"
+          >
+            📊 Registrar Resultado do Dia
+          </button>
           <button
             onClick={onResetTeams}
             className="w-full bg-fc-coral hover:bg-fc-coraldark text-white font-black py-3 rounded-full text-xs uppercase tracking-wider shadow-sm active:scale-95 transition"

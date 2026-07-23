@@ -7,7 +7,7 @@ const SUBTABS = [
   { key: 'Avulso', label: 'Avulsos' },
 ];
 
-export default function NotasTab({ players, onOpenRatingModal }) {
+export default function NotasTab({ players, onOpenRatingModal, onChangeCategory, onDeletePlayer }) {
   const [subTab, setSubTab] = useState('Mensalista');
 
   const list = players.filter((p) => p.posicaoFixa === 'Linha' && p.tipo === subTab);
@@ -46,12 +46,29 @@ export default function NotasTab({ players, onOpenRatingModal }) {
                 <span className={`text-[11px] font-black px-2 py-0.5 rounded-full shrink-0 ${tone.text} ${tone.bg} border ${tone.border}`}>
                   {p.notaMedia.toFixed(2)}
                 </span>
+                <select
+                  value={p.tipo === 'Avulso' ? 'Avulso' : p.posicaoFixa === 'Goleiro' ? 'Goleiro' : 'Mensalista'}
+                  onChange={(e) => onChangeCategory(p.id, e.target.value)}
+                  className="text-[9px] font-bold border border-slate-200 rounded-lg px-1 py-1.5 bg-fc-cream text-slate-600 shrink-0 focus:outline-none"
+                  title="Mudar categoria"
+                >
+                  <option value="Mensalista">Jogador</option>
+                  <option value="Avulso">Avulso</option>
+                  <option value="Goleiro">Goleiro</option>
+                </select>
                 <button
                   onClick={() => onOpenRatingModal(p)}
                   className="bg-fc-dark hover:bg-fc-dark2 text-white text-xs w-7 h-7 rounded-lg active:scale-95 transition shrink-0 shadow-sm flex items-center justify-center"
                   title="Editar nota"
                 >
                   ✏️
+                </button>
+                <button
+                  onClick={() => onDeletePlayer(p.id)}
+                  className="bg-fc-coral hover:bg-fc-coraldark text-white text-xs w-7 h-7 rounded-lg active:scale-95 transition shrink-0 shadow-sm flex items-center justify-center"
+                  title="Excluir jogador"
+                >
+                  🗑️
                 </button>
               </div>
             );

@@ -2,6 +2,7 @@ const ALL_TABS = [
   { key: 'presenca', icon: '📋', label: 'Quem vai', adminOnly: true },
   { key: 'times', icon: '🛡️', label: 'Times', adminOnly: false },
   { key: 'notas', icon: '⭐', label: 'Notas', adminOnly: true },
+  { key: 'estatisticas', icon: '📊', label: 'Stats', adminOnly: true },
 ];
 
 export default function BottomNav({ isAdmin, activeTab, onChangeTab }) {

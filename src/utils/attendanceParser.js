@@ -45,6 +45,8 @@ export function parseAttendanceText(rawText, players) {
   const unmatched = [];
   let inAvulsosSection = false;
 
+  const existingAvulsos = players.filter((p) => p.tipo === 'Avulso');
+
   for (const line of lines) {
     if (isAvulsosHeader(line)) {
       inAvulsosSection = true;
@@ -57,7 +59,12 @@ export function parseAttendanceText(rawText, players) {
     if (!name || present === null) continue;
 
     if (inAvulsosSection) {
-      avulsosToCreate.push({ nome: name, present, rawLine: line });
+      const existing = matchPlayer(name, existingAvulsos);
+      if (existing) {
+        matched.push({ player: existing, present, rawLine: line });
+      } else {
+        avulsosToCreate.push({ nome: name, present, rawLine: line });
+      }
       continue;
     }
 
