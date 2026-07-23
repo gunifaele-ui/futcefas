@@ -1,7 +1,7 @@
 import Icon from './Icon';
-import { ADMIN_LABELS } from '../utils/adminLabels';
+import { getAdminLabel } from '../utils/adminLabels';
 
-export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmin, hasUnreadActivity, onOpenActivityLog }) {
+export default function Header({ isAdmin, currentAdmin, admins, onLogoClick, onLeaveAdmin, hasUnreadActivity, onOpenActivityLog, onOpenSettings }) {
   const isViewerRole = currentAdmin === 'visualização';
 
   return (
@@ -9,7 +9,7 @@ export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmi
       <div className="absolute top-4 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
       <div className="flex items-center justify-center w-full max-w-md relative">
         {isAdmin && !isViewerRole && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
             <button
               onClick={onOpenActivityLog}
               title="Notificações"
@@ -19,6 +19,13 @@ export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmi
               {hasUnreadActivity && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-fc-lime border border-fc-dark" />
               )}
+            </button>
+            <button
+              onClick={onOpenSettings}
+              title="Configurações"
+              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/15 text-white/80 rounded-full transition"
+            >
+              <Icon name="settings" size={15} />
             </button>
           </div>
         )}
@@ -31,7 +38,7 @@ export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmi
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
             <span className="bg-white/10 text-white/80 text-[11px] font-medium px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
               {isViewerRole ? <Icon name="eye" size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-fc-lime" />}
-              {ADMIN_LABELS[currentAdmin] || 'ADM'}
+              {getAdminLabel(admins, currentAdmin) || 'ADM'}
             </span>
             <button
               onClick={onLeaveAdmin}

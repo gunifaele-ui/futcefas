@@ -17,12 +17,18 @@ import AddPlayerModal from './components/modals/AddPlayerModal';
 import EditPlayerModal from './components/modals/EditPlayerModal';
 import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal';
 import ActivityLogModal from './components/modals/ActivityLogModal';
+import SettingsModal from './components/modals/SettingsModal';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
+import { activeRaters, ratingFieldFor, computeNotaMedia, slugifyAdminKey } from './utils/ratings';
+import { VIEWER_KEY } from './utils/adminLabels';
 
 const MIN_JOGADORES_LINHA = 15;
 const LIMIAR_QUATRO_TIMES = 15;
-const ADMIN_KEYS = ['gustavo', 'miguel', 'enzo'];
-const VIEWER_KEY = 'visualização';
+const DEFAULT_ADMINS = [
+  { key: 'gustavo', label: 'Gustavo', password: 'gustavo', hidden: false },
+  { key: 'enzo', label: 'Enzo', password: 'enzo', hidden: false },
+  { key: 'miguel', label: 'Miguel', password: 'miguel', hidden: false },
+];
 const DRAFT_JITTER = 0.6;
 const DRAFT_CANDIDATES = 60;
 const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
@@ -136,6 +142,9 @@ export default function App() {
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
   const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
   const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
+  const [admins, setAdmins] = useFirestoreField('admins', DEFAULT_ADMINS);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [adminPendingDelete, setAdminPendingDelete] = useState(null);
   const [matchPendingDelete, setMatchPendingDelete] = useState(null);
   const [draftNotice, setDraftNotice] = useState(null);
   const seenDraftEventId = useRef(null);
@@ -160,7 +169,7 @@ export default function App() {
 
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingTargetPlayer, setRatingTargetPlayer] = useState(null);
-  const [tempNotes, setTempNotes] = useState({ gustavo: 7.0, enzo: 7.0, miguel: 7.0 });
+  const [tempNotes, setTempNotes] = useState({});
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
   const [addPlayerCategory, setAddPlayerCategory] = useState('Mensalista');
   const [editPlayerTarget, setEditPlayerTarget] = useState(null);
@@ -227,14 +236,61 @@ export default function App() {
   const handleAdminAuth = (e) => {
     e.preventDefault();
     const key = passwordInput.trim().toLowerCase();
-    if (ADMIN_KEYS.includes(key) || key === VIEWER_KEY) {
-      setCurrentAdmin(key);
+    const match = admins.find((a) => a.password.trim().toLowerCase() === key);
+    if (match) {
+      setCurrentAdmin(match.key);
+      setShowAdminModal(false);
+      setPasswordInput('');
+      setAdminError('');
+    } else if (key === VIEWER_KEY) {
+      setCurrentAdmin(VIEWER_KEY);
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
     } else {
       setAdminError('Senha incorreta!');
     }
+  };
+
+  const buildDefaultRatings = () => {
+    const ratings = {};
+    activeRaters(admins).forEach((a) => {
+      ratings[ratingFieldFor(a.key)] = 7.0;
+    });
+    ratings.notaMedia = 7.0;
+    return ratings;
+  };
+
+  const handleAddAdmin = (label, password) => {
+    const key = slugifyAdminKey(label);
+    if (!key) return { error: 'Nome inválido.' };
+    if (admins.some((a) => a.key === key)) return { error: 'Já existe um ADM com esse nome.' };
+    setAdmins([...admins, { key, label, password, hidden: false }]);
+    logActivity(`adicionou ${label} como novo ADM`);
+    return {};
+  };
+
+  const handleToggleAdminHidden = (key) => {
+    const admin = admins.find((a) => a.key === key);
+    if (!admin) return;
+    setAdmins(admins.map((a) => (a.key === key ? { ...a, hidden: !a.hidden } : a)));
+    logActivity(`${admin.hidden ? 'reativou' : 'ocultou'} o ADM ${admin.label}`);
+  };
+
+  const handleDeleteAdmin = (key) => {
+    setAdminPendingDelete(key);
+  };
+
+  const handleConfirmDeleteAdmin = () => {
+    const admin = admins.find((a) => a.key === adminPendingDelete);
+    if (!admin) return;
+    setAdmins(admins.filter((a) => a.key !== adminPendingDelete));
+    if (currentAdmin === adminPendingDelete) {
+      setCurrentAdmin(null);
+      setActiveTab('times');
+    }
+    logActivity(`excluiu o ADM ${admin.label}`);
+    setAdminPendingDelete(null);
   };
 
   const handleTogglePresence = (playerId) => {
@@ -268,10 +324,7 @@ export default function App() {
       tipo: 'Avulso',
       posicaoFixa: 'Linha',
       statusPresenca: true,
-      notaEnzo: 7.0,
-      notaGustavo: 7.0,
-      notaMiguel: 7.0,
-      notaMedia: 7.0,
+      ...buildDefaultRatings(),
     };
 
     setPlayers([...players, newPlayer]);
@@ -316,7 +369,7 @@ export default function App() {
       tipo,
       posicaoFixa,
       statusPresenca: false,
-      ...(posicaoFixa === 'Linha' && { notaEnzo: 7.0, notaGustavo: 7.0, notaMiguel: 7.0, notaMedia: 7.0 }),
+      ...(posicaoFixa === 'Linha' && buildDefaultRatings()),
     };
 
     setPlayers([...players, newPlayer]);
@@ -346,10 +399,7 @@ export default function App() {
       tipo: 'Avulso',
       posicaoFixa: 'Linha',
       statusPresenca: a.present,
-      notaEnzo: 7.0,
-      notaGustavo: 7.0,
-      notaMiguel: 7.0,
-      notaMedia: 7.0,
+      ...buildDefaultRatings(),
     }));
 
     setPlayers([...updated, ...newAvulsos]);
@@ -479,23 +529,26 @@ export default function App() {
 
   const handleOpenRatingModal = (player) => {
     setRatingTargetPlayer(player);
-    setTempNotes({
-      gustavo: player.notaGustavo || 7.0,
-      enzo: player.notaEnzo || 7.0,
-      miguel: player.notaMiguel || 7.0,
+    const notes = {};
+    activeRaters(admins).forEach((a) => {
+      notes[a.key] = player[ratingFieldFor(a.key)] ?? null;
     });
+    setTempNotes(notes);
     setShowRatingModal(true);
   };
 
   const handleSaveRatings = () => {
     if (isViewer || !ratingTargetPlayer) return;
 
-    const notaGustavo = currentAdmin === 'gustavo' ? tempNotes.gustavo : ratingTargetPlayer.notaGustavo ?? 7.0;
-    const notaEnzo = currentAdmin === 'enzo' ? tempNotes.enzo : ratingTargetPlayer.notaEnzo ?? 7.0;
-    const notaMiguel = currentAdmin === 'miguel' ? tempNotes.miguel : ratingTargetPlayer.notaMiguel ?? 7.0;
-    const avg = parseFloat(((notaGustavo + notaEnzo + notaMiguel) / 3).toFixed(2));
+    const updates = {};
+    activeRaters(admins).forEach((a) => {
+      const field = ratingFieldFor(a.key);
+      updates[field] = a.key === currentAdmin ? tempNotes[a.key] : ratingTargetPlayer[field] ?? null;
+    });
 
-    setPlayers(players.map((p) => (p.id === ratingTargetPlayer.id ? { ...p, notaGustavo, notaEnzo, notaMiguel, notaMedia: avg } : p)));
+    const avg = computeNotaMedia({ ...ratingTargetPlayer, ...updates }, admins);
+
+    setPlayers(players.map((p) => (p.id === ratingTargetPlayer.id ? { ...p, ...updates, notaMedia: avg } : p)));
 
     setShowRatingModal(false);
     setRatingTargetPlayer(null);
@@ -541,6 +594,7 @@ export default function App() {
       <Toast alert={systemAlert} />
       <DraftNotification
         notice={draftNotice}
+        admins={admins}
         onView={() => { setActiveTab('times'); setDraftNotice(null); }}
         onDismiss={() => setDraftNotice(null)}
       />
@@ -548,10 +602,12 @@ export default function App() {
       <Header
         isAdmin={isAdmin}
         currentAdmin={currentAdmin}
+        admins={admins}
         onLogoClick={handleLogoClick}
         onLeaveAdmin={() => { setCurrentAdmin(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }}
         hasUnreadActivity={hasUnreadActivity}
         onOpenActivityLog={handleOpenActivityLog}
+        onOpenSettings={() => setShowSettingsModal(true)}
       />
 
       <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-4">
@@ -595,6 +651,7 @@ export default function App() {
         {activeTab === 'notas' && isAdmin && (
           <NotasTab
             players={players}
+            admins={admins}
             isViewer={isViewer}
             onOpenRatingModal={handleOpenRatingModal}
             onChangeCategory={handleChangeCategory}
@@ -622,6 +679,7 @@ export default function App() {
 
       {showAdminModal && (
         <AdminModal
+          admins={admins}
           passwordInput={passwordInput}
           setPasswordInput={setPasswordInput}
           adminError={adminError}
@@ -660,6 +718,7 @@ export default function App() {
       {showRatingModal && ratingTargetPlayer && (
         <RatingModal
           player={ratingTargetPlayer}
+          admins={activeRaters(admins)}
           tempNotes={tempNotes}
           setTempNotes={setTempNotes}
           currentAdmin={currentAdmin}
@@ -696,7 +755,27 @@ export default function App() {
       {showActivityLog && (
         <ActivityLogModal
           activityLog={activityLog}
+          admins={admins}
           onClose={() => setShowActivityLog(false)}
+        />
+      )}
+
+      {showSettingsModal && (
+        <SettingsModal
+          admins={admins}
+          onAddAdmin={handleAddAdmin}
+          onToggleHidden={handleToggleAdminHidden}
+          onDeleteAdmin={handleDeleteAdmin}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+
+      {adminPendingDelete && (
+        <ConfirmDeleteModal
+          title="Excluir ADM"
+          message="Isso remove o acesso desse ADM pra sempre. Ele não vai mais conseguir entrar com a senha dele."
+          onConfirm={handleConfirmDeleteAdmin}
+          onClose={() => setAdminPendingDelete(null)}
         />
       )}
     </div>

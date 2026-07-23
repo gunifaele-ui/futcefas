@@ -1,9 +1,9 @@
 import Icon from './Icon';
-import { ADMIN_LABELS } from '../utils/adminLabels';
+import { getAdminLabel } from '../utils/adminLabels';
 
-export default function DraftNotification({ notice, onView, onDismiss }) {
+export default function DraftNotification({ notice, admins, onView, onDismiss }) {
   if (!notice) return null;
-  const adminLabel = ADMIN_LABELS[notice.adminKey] || 'Alguém';
+  const adminLabel = getAdminLabel(admins, notice.adminKey) || 'Alguém';
 
   return (
     <div className="fixed top-20 left-3 right-3 max-w-md mx-auto z-50">

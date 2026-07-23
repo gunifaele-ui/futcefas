@@ -2,8 +2,9 @@ import { useState } from 'react';
 import BottomSheet from '../BottomSheet';
 import Icon from '../Icon';
 
-export default function AdminModal({ passwordInput, setPasswordInput, adminError, onSubmit, onClose }) {
+export default function AdminModal({ admins, passwordInput, setPasswordInput, adminError, onSubmit, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
+  const adminNames = admins.map((a) => a.label).join(', ');
 
   return (
     <BottomSheet onClose={onClose}>
@@ -11,7 +12,7 @@ export default function AdminModal({ passwordInput, setPasswordInput, adminError
         <Icon name="lock" size={16} className="text-fc-dark/60" /> Entrar como ADM
       </h3>
       <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
-        Digite sua senha pessoal (Gustavo, Miguel ou Enzo), ou "Visualização" pra entrar só pra ver, sem poder editar nada.
+        Digite sua senha pessoal ({adminNames}), ou "Visualização" pra entrar só pra ver, sem poder editar nada.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { ratingTone } from '../../utils/playerVisuals';
+import { missingRaterLabels } from '../../utils/ratings';
 
 const SUBTABS = [
   { key: 'Mensalista', label: 'Mensalistas' },
@@ -27,7 +28,7 @@ function IconButton({ onClick, title, icon, tone = 'neutral' }) {
   );
 }
 
-export default function NotasTab({ players, isViewer, onOpenRatingModal, onChangeCategory, onDeletePlayer, onOpenAddPlayer, onOpenEditPlayer }) {
+export default function NotasTab({ players, admins, isViewer, onOpenRatingModal, onChangeCategory, onDeletePlayer, onOpenAddPlayer, onOpenEditPlayer }) {
   const [subTab, setSubTab] = useState('Mensalista');
 
   const list =
@@ -71,10 +72,18 @@ export default function NotasTab({ players, isViewer, onOpenRatingModal, onChang
           list.map((p) => {
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
+            const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];
             return (
               <div key={p.id} className="bg-white rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
                 <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
-                <span className="text-[13px] font-medium text-fc-dark break-words min-w-0 flex-1">{p.nome}</span>
+                <span className="text-[13px] font-medium text-fc-dark break-words min-w-0 flex-1 flex items-center gap-1">
+                  {missing.length > 0 && (
+                    <span title={`Falta nota de: ${missing.join(', ')}`} className="shrink-0 text-fc-coraldark">
+                      <Icon name="alertTriangle" size={12} />
+                    </span>
+                  )}
+                  {p.nome}
+                </span>
                 {!isGoleiro && (
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
                     {p.notaMedia.toFixed(2)}

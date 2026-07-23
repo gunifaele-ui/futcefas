@@ -2,14 +2,13 @@ import Avatar from '../Avatar';
 import BottomSheet from '../BottomSheet';
 import Icon from '../Icon';
 
-const ADMS = [
-  { key: 'gustavo', label: 'Gustavo', color: '#4B7BA8' },
-  { key: 'enzo', label: 'Enzo', color: '#7A6BA8' },
-  { key: 'miguel', label: 'Miguel', color: '#A8874B' },
-];
+const ADM_COLORS = ['#4B7BA8', '#7A6BA8', '#A8874B', '#3F8F5F', '#B0555F', '#5F8FB0'];
 
-export default function RatingModal({ player, tempNotes, setTempNotes, currentAdmin, onSave, onClose }) {
-  const media = ((tempNotes.gustavo + tempNotes.enzo + tempNotes.miguel) / 3).toFixed(2);
+export default function RatingModal({ player, admins, tempNotes, setTempNotes, currentAdmin, onSave, onClose }) {
+  const definedRatings = admins.map((a) => tempNotes[a.key]).filter((v) => v != null);
+  const media = definedRatings.length
+    ? (definedRatings.reduce((sum, v) => sum + v, 0) / definedRatings.length).toFixed(2)
+    : '—';
 
   return (
     <BottomSheet onClose={onClose}>
@@ -22,8 +21,12 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
       </p>
 
       <div className="space-y-3">
-        {ADMS.map((adm) => {
+        {admins.map((adm, idx) => {
           const isEditable = adm.key === currentAdmin;
+          const value = tempNotes[adm.key];
+          const hasValue = value != null;
+          const color = ADM_COLORS[idx % ADM_COLORS.length];
+
           return (
             <div
               key={adm.key}
@@ -34,18 +37,36 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
                   {adm.label}
                   {!isEditable && <Icon name="lock" size={11} />}
                 </span>
-                <span className="text-[13px] font-semibold text-fc-dark bg-fc-cream px-2.5 py-0.5 rounded-full min-w-[2.75rem] text-center">
-                  {tempNotes[adm.key].toFixed(1)}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {hasValue ? (
+                    <span className="text-[13px] font-semibold text-fc-dark bg-fc-cream px-2.5 py-0.5 rounded-full min-w-[2.75rem] text-center">
+                      {value.toFixed(1)}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-fc-muted bg-fc-cream px-2.5 py-0.5 rounded-full">
+                      Sem nota
+                    </span>
+                  )}
+                  {isEditable && hasValue && (
+                    <button
+                      type="button"
+                      onClick={() => setTempNotes({ ...tempNotes, [adm.key]: null })}
+                      title="Tirar minha nota (não conta na média)"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-fc-muted hover:text-fc-coraldark hover:bg-orange-50 transition"
+                    >
+                      <Icon name="trash" size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
               <input
                 type="range"
                 className="fc-range w-full disabled:cursor-not-allowed"
-                style={{ color: adm.color }}
+                style={{ color }}
                 min="1"
                 max="10"
                 step="0.5"
-                value={tempNotes[adm.key]}
+                value={value ?? 7}
                 disabled={!isEditable}
                 onChange={(e) => setTempNotes({ ...tempNotes, [adm.key]: parseFloat(e.target.value) })}
               />

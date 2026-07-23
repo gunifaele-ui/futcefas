@@ -1,6 +1,6 @@
 import BottomSheet from '../BottomSheet';
 import Icon from '../Icon';
-import { ADMIN_LABELS } from '../../utils/adminLabels';
+import { getAdminLabel } from '../../utils/adminLabels';
 
 function formatWhen(timestamp) {
   const date = new Date(timestamp);
@@ -11,7 +11,7 @@ function formatWhen(timestamp) {
   return `${date.toLocaleDateString('pt-BR')}, ${time}`;
 }
 
-export default function ActivityLogModal({ activityLog, onClose }) {
+export default function ActivityLogModal({ activityLog, admins, onClose }) {
   return (
     <BottomSheet onClose={onClose}>
       <h3 className="text-[15px] font-semibold text-fc-dark mb-3.5 flex items-center gap-2">
@@ -26,7 +26,7 @@ export default function ActivityLogModal({ activityLog, onClose }) {
             <div key={entry.id} className="border border-fc-line rounded-xl p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-medium text-fc-dark leading-snug">
-                  <span className="text-fc-dark/60">{ADMIN_LABELS[entry.adminKey] || 'Alguém'}</span> {entry.message}
+                  <span className="text-fc-dark/60">{getAdminLabel(admins, entry.adminKey) || 'Alguém'}</span> {entry.message}
                 </p>
               </div>
               <p className="text-[10px] text-fc-muted mt-1">{formatWhen(entry.timestamp)}</p>
