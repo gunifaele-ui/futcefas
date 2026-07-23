@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Avatar from '../Avatar';
+import Icon from '../Icon';
 import { ratingTone } from '../../utils/playerVisuals';
 
 const SUBTABS = [
@@ -7,6 +8,24 @@ const SUBTABS = [
   { key: 'Avulso', label: 'Avulsos' },
   { key: 'Goleiro', label: 'Goleiros' },
 ];
+
+function IconButton({ onClick, title, icon, tone = 'neutral' }) {
+  const tones = {
+    neutral: 'bg-fc-cream hover:bg-fc-line text-fc-dark/70',
+    dark: 'bg-fc-dark hover:bg-fc-dark2 text-white',
+    danger: 'bg-white hover:bg-orange-50 border border-fc-line text-fc-coraldark',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-7 h-7 rounded-lg active:scale-95 transition shrink-0 flex items-center justify-center ${tones[tone]}`}
+    >
+      <Icon name={icon} size={14} />
+    </button>
+  );
+}
 
 export default function NotasTab({ players, isViewer, onOpenRatingModal, onChangeCategory, onDeletePlayer, onOpenAddPlayer, onOpenEditPlayer }) {
   const [subTab, setSubTab] = useState('Mensalista');
@@ -16,28 +35,28 @@ export default function NotasTab({ players, isViewer, onOpenRatingModal, onChang
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-3xl p-4 shadow-sm flex items-center justify-between gap-2">
+      <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-black text-fc-dark tracking-tight">Mudar nota</h2>
-          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Painel dos ADMs Gustavo, Enzo e Miguel.</p>
+          <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Mudar nota</h2>
+          <p className="text-[11px] text-fc-muted mt-0.5">Painel dos ADMs Gustavo, Enzo e Miguel.</p>
         </div>
         {!isViewer && (
           <button
             onClick={() => onOpenAddPlayer(subTab)}
-            className="bg-fc-coral hover:bg-fc-coraldark text-white text-[10px] font-black px-3 py-2 rounded-full active:scale-95 transition shadow-sm shrink-0"
+            className="bg-fc-dark hover:bg-fc-dark2 text-white text-[12px] font-medium pl-2.5 pr-3 py-2 rounded-xl active:scale-95 transition shrink-0 flex items-center gap-1"
           >
-            + Jogador
+            <Icon name="plus" size={14} /> Jogador
           </button>
         )}
       </div>
 
-      <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl">
+      <div className="flex gap-1 bg-white border border-fc-line p-1 rounded-xl">
         {SUBTABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setSubTab(tab.key)}
-            className={`flex-1 text-[11px] font-black py-1.5 rounded-xl transition ${
-              subTab === tab.key ? 'bg-white text-fc-dark shadow-sm' : 'text-slate-500'
+            className={`flex-1 text-[12px] py-1.5 rounded-lg transition ${
+              subTab === tab.key ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
             }`}
           >
             {tab.label}
@@ -47,17 +66,17 @@ export default function NotasTab({ players, isViewer, onOpenRatingModal, onChang
 
       <div className="space-y-1.5">
         {list.length === 0 ? (
-          <p className="text-xs text-slate-400 italic text-center py-4">Nenhum jogador nessa categoria.</p>
+          <p className="text-[12px] text-fc-muted text-center py-6">Nenhum jogador nessa categoria.</p>
         ) : (
           list.map((p) => {
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             return (
-              <div key={p.id} className="bg-white rounded-xl px-2.5 py-2 flex items-center gap-2 shadow-sm">
-                <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[8px]" />
-                <span className="text-xs font-black text-fc-dark break-words min-w-0 flex-1">{p.nome}</span>
+              <div key={p.id} className="bg-white rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
+                <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
+                <span className="text-[13px] font-medium text-fc-dark break-words min-w-0 flex-1">{p.nome}</span>
                 {!isGoleiro && (
-                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-full shrink-0 ${tone.text} ${tone.bg} border ${tone.border}`}>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
                     {p.notaMedia.toFixed(2)}
                   </span>
                 )}
@@ -65,41 +84,17 @@ export default function NotasTab({ players, isViewer, onOpenRatingModal, onChang
                   <select
                     value={p.tipo === 'Avulso' ? 'Avulso' : p.posicaoFixa === 'Goleiro' ? 'Goleiro' : 'Mensalista'}
                     onChange={(e) => onChangeCategory(p.id, e.target.value)}
-                    className="text-[9px] font-bold border border-slate-200 rounded-lg px-1 py-1.5 bg-fc-cream text-slate-600 shrink-0 focus:outline-none"
+                    className="text-[10px] font-medium border border-fc-line rounded-lg px-1 py-1.5 bg-fc-cream text-fc-dark/70 shrink-0 focus:outline-none"
                     title="Mudar categoria"
                   >
-                    <option value="Mensalista">Jogador</option>
+                    <option value="Mensalista">Mensal</option>
                     <option value="Avulso">Avulso</option>
                     <option value="Goleiro">Goleiro</option>
                   </select>
                 )}
-                {!isViewer && (
-                  <button
-                    onClick={() => onOpenEditPlayer(p)}
-                    className="bg-slate-500 hover:bg-slate-600 text-white text-xs w-7 h-7 rounded-lg active:scale-95 transition shrink-0 shadow-sm flex items-center justify-center"
-                    title="Editar nome/foto"
-                  >
-                    🖼️
-                  </button>
-                )}
-                {!isGoleiro && !isViewer && (
-                  <button
-                    onClick={() => onOpenRatingModal(p)}
-                    className="bg-fc-dark hover:bg-fc-dark2 text-white text-xs w-7 h-7 rounded-lg active:scale-95 transition shrink-0 shadow-sm flex items-center justify-center"
-                    title="Editar nota"
-                  >
-                    ✏️
-                  </button>
-                )}
-                {!isViewer && (
-                  <button
-                    onClick={() => onDeletePlayer(p.id)}
-                    className="bg-fc-coral hover:bg-fc-coraldark text-white text-xs w-7 h-7 rounded-lg active:scale-95 transition shrink-0 shadow-sm flex items-center justify-center"
-                    title="Excluir jogador"
-                  >
-                    🗑️
-                  </button>
-                )}
+                {!isViewer && <IconButton onClick={() => onOpenEditPlayer(p)} title="Editar nome/foto" icon="image" />}
+                {!isGoleiro && !isViewer && <IconButton onClick={() => onOpenRatingModal(p)} title="Editar nota" icon="pencil" tone="dark" />}
+                {!isViewer && <IconButton onClick={() => onDeletePlayer(p.id)} title="Excluir jogador" icon="trash" tone="danger" />}
               </div>
             );
           })

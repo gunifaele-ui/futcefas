@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { parseAttendanceText } from '../../utils/attendanceParser';
 import BottomSheet from '../BottomSheet';
+import Icon from '../Icon';
 
 export default function ImportAttendanceModal({ players, onApply, onClose }) {
   const [text, setText] = useState('');
@@ -41,8 +42,10 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="font-black text-sm text-fc-dark mb-1">📋 Colar Lista do WhatsApp</h3>
-      <p className="text-[11px] text-slate-400 mb-3 font-bold">
+      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
+        <Icon name="clipboard" size={16} className="text-fc-dark/60" /> Colar lista do WhatsApp
+      </h3>
+      <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
         Cole a lista com ✅ pra quem vai e ❌ pra quem não vai. Se tiver uma linha "Avulsos", os nomes depois dela viram avulsos automaticamente.
       </p>
 
@@ -53,18 +56,22 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
             onChange={(e) => setText(e.target.value)}
             rows={10}
             placeholder={'Chicon ✅\nMiguel ✅\nJoãozinho ❌\n\nAvulsos\nFulano ✅'}
-            className="w-full bg-fc-cream border border-slate-200 rounded-2xl py-3 px-4 text-xs text-fc-dark focus:outline-none focus:border-fc-dark focus:ring-2 focus:ring-fc-lime/40 font-bold transition resize-none"
+            className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition resize-none"
             autoFocus
           />
           <div className="flex gap-2 pt-3">
-            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-3 rounded-full text-xs transition">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+            >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleAnalyze}
               disabled={!text.trim()}
-              className="flex-1 bg-fc-lime hover:brightness-95 disabled:opacity-40 text-fc-dark font-black py-3 rounded-full text-xs transition shadow-sm"
+              className="flex-1 bg-fc-dark hover:bg-fc-dark2 disabled:opacity-40 text-white font-medium py-3 rounded-xl text-[13px] transition"
             >
               Analisar
             </button>
@@ -75,34 +82,34 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
       {parsed && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="bg-fc-limesoft/60 border border-fc-limesoft rounded-2xl py-2">
-              <span className="block text-lg font-black text-fc-dark">{parsed.matched.length}</span>
-              <span className="text-[9px] font-bold text-fc-dark/70 uppercase">Reconhecidos</span>
+            <div className="bg-fc-limesoft rounded-xl py-2.5">
+              <span className="block text-[18px] font-semibold text-fc-dark">{parsed.matched.length}</span>
+              <span className="text-[11px] text-fc-dark/60">Reconhecidos</span>
             </div>
-            <div className="bg-orange-50 border border-orange-100 rounded-2xl py-2">
-              <span className="block text-lg font-black text-fc-coraldark">{parsed.avulsosToCreate.length}</span>
-              <span className="text-[9px] font-bold text-fc-coraldark uppercase">Avulsos novos</span>
+            <div className="bg-fc-cream border border-fc-line rounded-xl py-2.5">
+              <span className="block text-[18px] font-semibold text-fc-coraldark">{parsed.avulsosToCreate.length}</span>
+              <span className="text-[11px] text-fc-muted">Avulsos novos</span>
             </div>
           </div>
 
           {parsed.unmatched.length > 0 && (
             <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase text-fc-coraldark tracking-wider block">
-                ⚠️ {parsed.unmatched.length} nome(s) não reconhecido(s) — quem é?
+              <span className="text-[12px] font-medium text-fc-coraldark block">
+                {parsed.unmatched.length} nome(s) não reconhecido(s) — quem é?
               </span>
               {parsed.unmatched.map((u, idx) => (
-                <div key={idx} className="bg-orange-50 border border-orange-100 rounded-2xl p-2.5">
-                  <p className="text-xs font-black text-fc-dark mb-1.5 break-words">"{u.name}"</p>
+                <div key={idx} className="bg-fc-cream border border-fc-line rounded-xl p-2.5">
+                  <p className="text-[13px] font-medium text-fc-dark mb-1.5 break-words">"{u.name}"</p>
                   <select
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-2.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-fc-dark"
+                    className="w-full bg-white border border-fc-line rounded-lg py-2 px-2.5 text-[12px] font-medium text-fc-dark/80 focus:outline-none focus:border-fc-dark/30"
                     defaultValue=""
                     onChange={(e) => handleResolutionChange(idx, e.target.value)}
                   >
                     <option value="" disabled>
                       Selecione uma opção...
                     </option>
-                    <option value="__avulso__">➕ Criar como avulso novo</option>
-                    <option value="__ignore__">🚫 Ignorar essa linha</option>
+                    <option value="__avulso__">Criar como avulso novo</option>
+                    <option value="__ignore__">Ignorar essa linha</option>
                     {players.map((p) => (
                       <option key={p.id} value={p.id}>
                         É o(a) {p.nome}
@@ -115,14 +122,22 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
           )}
 
           {parsed.matched.length === 0 && parsed.avulsosToCreate.length === 0 && parsed.unmatched.length === 0 && (
-            <p className="text-xs text-slate-400 italic text-center py-4">Nenhuma linha reconhecida. Confira se usou ✅ ou ❌ nas linhas.</p>
+            <p className="text-[12px] text-fc-muted text-center py-4">Nenhuma linha reconhecida. Confira se usou ✅ ou ❌ nas linhas.</p>
           )}
 
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={() => setParsed(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-3 rounded-full text-xs transition">
+            <button
+              type="button"
+              onClick={() => setParsed(null)}
+              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+            >
               Voltar
             </button>
-            <button type="button" onClick={handleApply} className="flex-1 bg-fc-lime hover:brightness-95 text-fc-dark font-black py-3 rounded-full text-xs transition shadow-sm">
+            <button
+              type="button"
+              onClick={handleApply}
+              className="flex-1 bg-fc-dark hover:bg-fc-dark2 text-white font-medium py-3 rounded-xl text-[13px] transition"
+            >
               Aplicar
             </button>
           </div>

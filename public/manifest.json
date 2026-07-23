@@ -3,8 +3,8 @@
   "short_name": "FutCefas",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#173430",
-  "theme_color": "#173430",
+  "background_color": "#1E2E28",
+  "theme_color": "#1E2E28",
   "icons": [
     {
       "src": "/favicon.png",

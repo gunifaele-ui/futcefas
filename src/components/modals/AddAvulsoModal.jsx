@@ -1,10 +1,13 @@
 import BottomSheet from '../BottomSheet';
+import Icon from '../Icon';
 
 export default function AddAvulsoModal({ newAvulsoName, setNewAvulsoName, onSubmit, onClose }) {
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="font-black text-sm text-fc-dark mb-1">➕ Adicionar Avulso</h3>
-      <p className="text-[11px] text-slate-400 mb-3 font-bold">O avulso entra na lista já confirmado com nota padrão 7.0.</p>
+      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
+        <Icon name="plus" size={16} className="text-fc-dark/60" /> Adicionar avulso
+      </h3>
+      <p className="text-[12px] text-fc-muted mb-4">O avulso entra na lista já confirmado com nota padrão 7.0.</p>
 
       <form onSubmit={onSubmit} className="space-y-3">
         <input
@@ -12,7 +15,7 @@ export default function AddAvulsoModal({ newAvulsoName, setNewAvulsoName, onSubm
           placeholder="Nome do jogador avulso"
           value={newAvulsoName}
           onChange={(e) => setNewAvulsoName(e.target.value)}
-          className="w-full bg-fc-cream border border-slate-200 rounded-2xl py-3 px-4 text-xs text-fc-dark focus:outline-none focus:border-fc-dark focus:ring-2 focus:ring-fc-lime/40 font-bold transition"
+          className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
           autoFocus
         />
 
@@ -20,13 +23,13 @@ export default function AddAvulsoModal({ newAvulsoName, setNewAvulsoName, onSubm
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-3 rounded-full text-xs transition"
+            className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="flex-1 bg-fc-lime hover:brightness-95 text-fc-dark font-black py-3 rounded-full text-xs transition shadow-sm"
+            className="flex-1 bg-fc-dark hover:bg-fc-dark2 text-white font-medium py-3 rounded-xl text-[13px] transition"
           >
             Adicionar
           </button>

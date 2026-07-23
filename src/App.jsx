@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { JOGADORES_LINHA_INICIAIS, GOLEIROS_INICIAIS } from './data/initialPlayers';
 import { useFirestoreField } from './hooks/useFirestoreField';
 import Toast from './components/Toast';
+import DraftNotification from './components/DraftNotification';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import TimesTab from './components/tabs/TimesTab';
@@ -12,28 +13,123 @@ import SearchModal from './components/modals/SearchModal';
 import AddAvulsoModal from './components/modals/AddAvulsoModal';
 import RatingModal from './components/modals/RatingModal';
 import ImportAttendanceModal from './components/modals/ImportAttendanceModal';
-import RegisterResultModal from './components/modals/RegisterResultModal';
 import AddPlayerModal from './components/modals/AddPlayerModal';
 import EditPlayerModal from './components/modals/EditPlayerModal';
+import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
 
 const MIN_JOGADORES_LINHA = 15;
 const LIMIAR_QUATRO_TIMES = 15;
 const ADMIN_KEYS = ['gustavo', 'miguel', 'enzo'];
-const VIEWER_KEY = 'visualizar';
+const VIEWER_KEY = 'visualização';
 const DRAFT_JITTER = 0.6;
+const DRAFT_CANDIDATES = 60;
+const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
 
 const bgTextureStyle = {
   backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(23,52,48,0.06) 1px, transparent 0)',
   backgroundSize: '20px 20px',
 };
 
+function pairKey(idA, idB) {
+  return idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+}
+
+function buildPairWeights(matchHistory) {
+  const weights = new Map();
+  matchHistory.slice(0, REPEAT_MATCH_WEIGHTS.length).forEach((match, idx) => {
+    const weight = REPEAT_MATCH_WEIGHTS[idx];
+    match.teams.forEach((team) => {
+      const ids = team.players.map((p) => p.id);
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const key = pairKey(ids[i], ids[j]);
+          weights.set(key, (weights.get(key) || 0) + weight);
+        }
+      }
+    });
+  });
+  return weights;
+}
+
+function draftOnce(linePresent, numTimes) {
+  const withJitter = linePresent.map((p) => ({ player: p, key: p.notaMedia + (Math.random() - 0.5) * DRAFT_JITTER }));
+  withJitter.sort((a, b) => b.key - a.key);
+  const sorted = withJitter.map((w) => w.player);
+
+  const teams = Array.from({ length: numTimes }, (_, i) => ({
+    id: `t${i + 1}`,
+    name: `Time ${i + 1}`,
+    players: [],
+    ratingSum: 0,
+  }));
+
+  let ascending = true;
+  let teamIdx = 0;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const player = sorted[i];
+    teams[teamIdx].players.push(player);
+    teams[teamIdx].ratingSum += player.notaMedia;
+
+    if (ascending) {
+      if (teamIdx === numTimes - 1) ascending = false;
+      else teamIdx++;
+    } else {
+      if (teamIdx === 0) ascending = true;
+      else teamIdx--;
+    }
+  }
+
+  return teams;
+}
+
+function scoreDraft(teams, pairWeights) {
+  let repeatCost = 0;
+  teams.forEach((team) => {
+    const ids = team.players.map((p) => p.id);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        repeatCost += pairWeights.get(pairKey(ids[i], ids[j])) || 0;
+      }
+    }
+  });
+
+  const avgRatings = teams.map((t) => t.ratingSum / t.players.length);
+  const mean = avgRatings.reduce((a, b) => a + b, 0) / avgRatings.length;
+  const balanceCost = avgRatings.reduce((sum, r) => sum + (r - mean) ** 2, 0);
+
+  // Repeat pairings pesam muito mais que o desbalanço residual, já que o
+  // próprio draftOnce já mantém os times parelhos por nível em qualquer ordem.
+  return repeatCost * 1000 + balanceCost;
+}
+
+function draftBalancedTeams(linePresent, numTimes, matchHistory) {
+  const pairWeights = buildPairWeights(matchHistory);
+  let bestTeams = null;
+  let bestScore = Infinity;
+
+  for (let i = 0; i < DRAFT_CANDIDATES; i++) {
+    const candidate = draftOnce(linePresent, numTimes);
+    const score = scoreDraft(candidate, pairWeights);
+    if (score < bestScore) {
+      bestScore = score;
+      bestTeams = candidate;
+    }
+  }
+
+  return bestTeams;
+}
+
 export default function App() {
   const [players, setPlayers] = useFirestoreField('players', [...JOGADORES_LINHA_INICIAIS, ...GOLEIROS_INICIAIS]);
   const [generatedTeams, setGeneratedTeams] = useFirestoreField('generatedTeams', []);
   const [teamsDrafted, setTeamsDrafted] = useFirestoreField('teamsDrafted', false);
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
-  const [showResultModal, setShowResultModal] = useState(false);
+  const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
+  const [matchPendingDelete, setMatchPendingDelete] = useState(null);
+  const [draftNotice, setDraftNotice] = useState(null);
+  const seenDraftEventId = useRef(null);
 
   const [activeTab, setActiveTab] = useState('times');
   const [currentAdmin, setCurrentAdmin] = useState(null);
@@ -65,6 +161,21 @@ export default function App() {
       setSystemAlert({ show: false, message: '', type: 'info' });
     }, 3000);
   };
+
+  useEffect(() => {
+    if (!lastDraftEvent) return;
+    if (seenDraftEventId.current === null) {
+      seenDraftEventId.current = lastDraftEvent.id;
+      return;
+    }
+    if (lastDraftEvent.id === seenDraftEventId.current) return;
+    seenDraftEventId.current = lastDraftEvent.id;
+    if (lastDraftEvent.adminKey === currentAdmin) return;
+
+    setDraftNotice(lastDraftEvent);
+    const timer = setTimeout(() => setDraftNotice(null), 12000);
+    return () => clearTimeout(timer);
+  }, [lastDraftEvent, currentAdmin]);
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -224,36 +335,25 @@ export default function App() {
     }
 
     const numTimes = linePresent.length > LIMIAR_QUATRO_TIMES ? 4 : 3;
-    const withJitter = linePresent.map((p) => ({ player: p, key: p.notaMedia + (Math.random() - 0.5) * DRAFT_JITTER }));
-    withJitter.sort((a, b) => b.key - a.key);
-    const sorted = withJitter.map((w) => w.player);
+    const teams = draftBalancedTeams(linePresent, numTimes, matchHistory);
 
-    const teams = Array.from({ length: numTimes }, (_, i) => ({
-      id: `t${i + 1}`,
-      name: `Time ${i + 1}`,
-      players: [],
-      ratingSum: 0,
-    }));
-
-    let ascending = true;
-    let teamIdx = 0;
-
-    for (let i = 0; i < sorted.length; i++) {
-      const player = sorted[i];
-      teams[teamIdx].players.push(player);
-      teams[teamIdx].ratingSum += player.notaMedia;
-
-      if (ascending) {
-        if (teamIdx === numTimes - 1) ascending = false;
-        else teamIdx++;
-      } else {
-        if (teamIdx === 0) ascending = true;
-        else teamIdx--;
-      }
-    }
+    const historyRecord = {
+      id: `m-${Date.now()}`,
+      date: new Date().toISOString(),
+      teams: teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        ratingSum: t.ratingSum,
+        players: t.players.map((p) => ({ id: p.id, nome: p.nome })),
+      })),
+      winners: [],
+      goals: [],
+    };
 
     setGeneratedTeams(teams);
     setTeamsDrafted(true);
+    setMatchHistory([historyRecord, ...matchHistory]);
+    setLastDraftEvent({ id: historyRecord.id, adminKey: currentAdmin, timestamp: Date.now() });
     triggerAlert('Time tirado com sucesso!', 'success');
     setActiveTab('times');
   };
@@ -266,32 +366,48 @@ export default function App() {
     setActiveTab('presenca');
   };
 
-  const handleSaveResult = (winners, goalRows) => {
-    if (isViewer) return;
-    const allPlayers = generatedTeams.flatMap((t) => t.players);
-    const goals = goalRows
-      .filter((g) => g.playerId && g.gols > 0)
-      .map((g) => {
-        const player = allPlayers.find((p) => p.id === g.playerId);
-        return { playerId: g.playerId, nome: player ? player.nome : '', gols: g.gols };
-      });
+  const handleUpdateMatchDate = (matchId, newDate) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => (m.id === matchId ? { ...m, date: new Date(newDate).toISOString() } : m)));
+  };
 
-    const record = {
-      id: `m-${Date.now()}`,
-      date: new Date().toISOString(),
-      teams: generatedTeams.map((t) => ({
-        id: t.id,
-        name: t.name,
-        ratingSum: t.ratingSum,
-        players: t.players.map((p) => ({ id: p.id, nome: p.nome })),
-      })),
-      winners,
-      goals,
-    };
+  const handleToggleMatchWinner = (matchId, teamId) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      const winners = m.winners.includes(teamId) ? m.winners.filter((id) => id !== teamId) : [...m.winners, teamId];
+      return { ...m, winners };
+    }));
+  };
 
-    setMatchHistory([record, ...matchHistory]);
-    setShowResultModal(false);
-    triggerAlert('Resultado registrado!', 'success');
+  const handleAddGoal = (matchId, playerId, playerNome) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      const existing = m.goals.find((g) => g.playerId === playerId);
+      const goals = existing
+        ? m.goals.map((g) => (g.playerId === playerId ? { ...g, gols: g.gols + 1 } : g))
+        : [...m.goals, { playerId, nome: playerNome, gols: 1 }];
+      return { ...m, goals };
+    }));
+  };
+
+  const handleRemoveGoal = (matchId, playerId) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.map((m) => {
+      if (m.id !== matchId) return m;
+      const goals = m.goals
+        .map((g) => (g.playerId === playerId ? { ...g, gols: g.gols - 1 } : g))
+        .filter((g) => g.gols > 0);
+      return { ...m, goals };
+    }));
+  };
+
+  const handleDeleteMatch = (matchId) => {
+    if (!isAdmin || isViewer) return;
+    setMatchHistory(matchHistory.filter((m) => m.id !== matchId));
+    setMatchPendingDelete(null);
+    triggerAlert('Sorteio excluído do histórico.', 'info');
   };
 
   const handleCopyTeamsText = () => {
@@ -383,6 +499,11 @@ export default function App() {
       </div>
 
       <Toast alert={systemAlert} />
+      <DraftNotification
+        notice={draftNotice}
+        onView={() => { setActiveTab('times'); setDraftNotice(null); }}
+        onDismiss={() => setDraftNotice(null)}
+      />
 
       <Header isAdmin={isAdmin} currentAdmin={currentAdmin} onLogoClick={handleLogoClick} onLeaveAdmin={() => { setCurrentAdmin(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }} />
 
@@ -397,7 +518,7 @@ export default function App() {
             copied={copied}
             onCopyTeams={handleCopyTeamsText}
             onResetTeams={handleResetTeams}
-            onOpenResultModal={() => setShowResultModal(true)}
+            onGoToHistory={() => setActiveTab('estatisticas')}
           />
         )}
 
@@ -437,7 +558,18 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'estatisticas' && isAdmin && <EstatisticasTab matchHistory={matchHistory} />}
+        {activeTab === 'estatisticas' && (
+          <EstatisticasTab
+            matchHistory={matchHistory}
+            isAdmin={isAdmin}
+            isViewer={isViewer}
+            onRequestDeleteMatch={(matchId) => setMatchPendingDelete(matchId)}
+            onUpdateDate={handleUpdateMatchDate}
+            onToggleWinner={handleToggleMatchWinner}
+            onAddGoal={handleAddGoal}
+            onRemoveGoal={handleRemoveGoal}
+          />
+        )}
       </main>
 
       <BottomNav isAdmin={isAdmin} activeTab={activeTab} onChangeTab={setActiveTab} />
@@ -490,14 +622,6 @@ export default function App() {
         />
       )}
 
-      {showResultModal && (
-        <RegisterResultModal
-          teams={generatedTeams}
-          onSave={handleSaveResult}
-          onClose={() => setShowResultModal(false)}
-        />
-      )}
-
       {showAddPlayerModal && (
         <AddPlayerModal
           defaultCategory={addPlayerCategory}
@@ -511,6 +635,15 @@ export default function App() {
           player={editPlayerTarget}
           onSave={handleEditPlayer}
           onClose={() => setEditPlayerTarget(null)}
+        />
+      )}
+
+      {matchPendingDelete && (
+        <ConfirmDeleteModal
+          title="Excluir Sorteio"
+          message="Isso remove esse sorteio e o resultado registrado do histórico pra sempre."
+          onConfirm={() => handleDeleteMatch(matchPendingDelete)}
+          onClose={() => setMatchPendingDelete(null)}
         />
       )}
     </div>

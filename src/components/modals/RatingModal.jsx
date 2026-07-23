@@ -1,10 +1,11 @@
 import Avatar from '../Avatar';
 import BottomSheet from '../BottomSheet';
+import Icon from '../Icon';
 
 const ADMS = [
-  { key: 'gustavo', label: 'Gustavo', color: '#0284c7', text: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-100' },
-  { key: 'enzo', label: 'Enzo', color: '#7c3aed', text: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
-  { key: 'miguel', label: 'Miguel', color: '#d97706', text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+  { key: 'gustavo', label: 'Gustavo', color: '#4B7BA8' },
+  { key: 'enzo', label: 'Enzo', color: '#7A6BA8' },
+  { key: 'miguel', label: 'Miguel', color: '#A8874B' },
 ];
 
 export default function RatingModal({ player, tempNotes, setTempNotes, currentAdmin, onSave, onClose }) {
@@ -14,21 +15,26 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
     <BottomSheet onClose={onClose}>
       <div className="flex items-center gap-2.5 mb-1">
         <Avatar nome={player.nome} foto={player.foto} size="w-9 h-9" />
-        <h3 className="font-black text-sm text-fc-dark">Mudar nota de {player.nome}</h3>
+        <h3 className="text-[15px] font-semibold text-fc-dark">Mudar nota de {player.nome}</h3>
       </div>
-      <p className="text-[11px] text-slate-400 mb-4 font-bold">Arraste pra ajustar sua nota (1.0 a 10.0). Só dá pra mudar a nota do ADM logado.</p>
+      <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
+        Arraste pra ajustar sua nota (1.0 a 10.0). Só dá pra mudar a nota do ADM logado.
+      </p>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {ADMS.map((adm) => {
           const isEditable = adm.key === currentAdmin;
           return (
-            <div key={adm.key} className={`p-3 rounded-2xl border ${adm.bg} ${adm.border} ${!isEditable ? 'opacity-50' : ''}`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className={`text-xs font-black ${adm.text}`}>
+            <div
+              key={adm.key}
+              className={`p-3 rounded-xl border ${isEditable ? 'border-fc-line bg-white' : 'border-fc-line bg-fc-cream/60 opacity-60'}`}
+            >
+              <div className="flex justify-between items-center mb-2.5">
+                <span className="text-[12px] font-medium text-fc-dark/70 flex items-center gap-1.5">
                   {adm.label}
-                  {!isEditable && ' 🔒'}
+                  {!isEditable && <Icon name="lock" size={11} />}
                 </span>
-                <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-white ${adm.text} shadow-sm min-w-[2.5rem] text-center`}>
+                <span className="text-[13px] font-semibold text-fc-dark bg-fc-cream px-2.5 py-0.5 rounded-full min-w-[2.75rem] text-center">
                   {tempNotes[adm.key].toFixed(1)}
                 </span>
               </div>
@@ -47,9 +53,9 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
           );
         })}
 
-        <div className="pt-1 flex justify-between items-center text-xs border-t border-slate-100 pt-3 font-black">
-          <span className="text-slate-500">Média Calculada:</span>
-          <span className="text-fc-dark bg-fc-limesoft px-3 py-1.5 rounded-full text-sm">{media}</span>
+        <div className="flex justify-between items-center border-t border-fc-line pt-3">
+          <span className="text-[12px] text-fc-muted">Média calculada</span>
+          <span className="text-[14px] font-semibold text-fc-dark bg-fc-limesoft px-3 py-1 rounded-full">{media}</span>
         </div>
       </div>
 
@@ -57,14 +63,14 @@ export default function RatingModal({ player, tempNotes, setTempNotes, currentAd
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-3 rounded-full text-xs transition"
+          className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={onSave}
-          className="flex-1 bg-fc-lime hover:brightness-95 text-fc-dark font-black py-3 rounded-full text-xs transition shadow-sm"
+          className="flex-1 bg-fc-dark hover:bg-fc-dark2 text-white font-medium py-3 rounded-xl text-[13px] transition"
         >
           Salvar
         </button>

@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import BottomSheet from '../BottomSheet';
+import Icon from '../Icon';
 
 export default function AdminModal({ passwordInput, setPasswordInput, adminError, onSubmit, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="font-black text-sm text-fc-dark mb-1">🔐 Entrar como ADM</h3>
-      <p className="text-[11px] text-slate-400 mb-4 font-bold">
-        Digite sua senha pessoal (Gustavo, Miguel ou Enzo), ou "visualizar" pra entrar só pra ver, sem poder editar nada.
+      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
+        <Icon name="lock" size={16} className="text-fc-dark/60" /> Entrar como ADM
+      </h3>
+      <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
+        Digite sua senha pessoal (Gustavo, Miguel ou Enzo), ou "Visualização" pra entrar só pra ver, sem poder editar nada.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3">
@@ -18,32 +21,32 @@ export default function AdminModal({ passwordInput, setPasswordInput, adminError
             placeholder="Senha de acesso"
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
-            className="w-full bg-fc-cream border border-slate-200 rounded-2xl py-3 pl-4 pr-11 text-xs text-fc-dark focus:outline-none focus:border-fc-dark focus:ring-2 focus:ring-fc-lime/40 font-bold transition"
+            className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 pl-4 pr-11 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
             autoFocus
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl text-slate-400 hover:text-fc-dark flex items-center justify-center text-sm transition"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-fc-muted hover:text-fc-dark flex items-center justify-center transition"
             title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
           >
-            {showPassword ? '🙈' : '👁️'}
+            <Icon name={showPassword ? 'eyeOff' : 'eye'} size={16} />
           </button>
         </div>
 
-        {adminError && <p className="text-xs text-fc-coraldark font-bold">{adminError}</p>}
+        {adminError && <p className="text-[12px] text-fc-coraldark font-medium">{adminError}</p>}
 
         <div className="flex gap-2 pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-3 rounded-full text-xs transition"
+            className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="flex-1 bg-fc-lime hover:brightness-95 text-fc-dark font-black py-3 rounded-full text-xs transition shadow-sm"
+            className="flex-1 bg-fc-dark hover:bg-fc-dark2 text-white font-medium py-3 rounded-xl text-[13px] transition"
           >
             Entrar
           </button>

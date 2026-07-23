@@ -5,14 +5,14 @@ export default function Avatar({ nome, foto, size = 'w-9 h-9', textSize = 'text-
 
   if (foto) {
     return (
-      <div className={`${size} rounded-full overflow-hidden ring-2 ${style.ring} shadow-sm shrink-0`}>
+      <div className={`${size} rounded-full overflow-hidden ring-1 ${style.ring} shrink-0`}>
         <img src={foto} alt={nome} className="w-full h-full object-cover" />
       </div>
     );
   }
 
   return (
-    <div className={`${size} rounded-full ${style.bg} ring-2 ${style.ring} flex items-center justify-center text-fc-dark ${textSize} font-black shadow-sm shrink-0`}>
+    <div className={`${size} rounded-full ${style.bg} ring-1 ${style.ring} flex items-center justify-center text-fc-dark/70 ${textSize} font-semibold shrink-0`}>
       {getInitials(nome)}
     </div>
   );

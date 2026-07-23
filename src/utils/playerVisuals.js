@@ -1,4 +1,4 @@
-const AVATAR_STYLE = { bg: 'bg-slate-100', ring: 'ring-slate-200' };
+const AVATAR_STYLE = { bg: 'bg-fc-cream', ring: 'ring-fc-line' };
 
 export function getInitials(nome) {
   if (!nome) return '?';
@@ -12,7 +12,7 @@ export function getAvatarStyle() {
 }
 
 export function ratingTone(media) {
-  if (media >= 8) return { text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', bar: 'bg-emerald-500' };
-  if (media >= 6.5) return { text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', bar: 'bg-amber-500' };
-  return { text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', bar: 'bg-rose-500' };
+  if (media >= 8) return { text: 'text-emerald-700', bg: 'bg-emerald-50/70', border: 'border-emerald-100', bar: 'bg-emerald-400' };
+  if (media >= 6.5) return { text: 'text-fc-dark/70', bg: 'bg-fc-cream', border: 'border-fc-line', bar: 'bg-fc-lime' };
+  return { text: 'text-fc-coraldark', bg: 'bg-orange-50/60', border: 'border-orange-100', bar: 'bg-fc-coral' };
 }
