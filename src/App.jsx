@@ -203,9 +203,9 @@ export default function App() {
     }, 3000);
   };
 
-  const logActivity = (message) => {
+  const logActivity = (message, meta = {}) => {
     if (!currentAdmin || isViewer) return;
-    const entry = { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, adminKey: currentAdmin, message, timestamp: Date.now() };
+    const entry = { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, adminKey: currentAdmin, message, timestamp: Date.now(), ...meta };
     setActivityLog([entry, ...activityLog].slice(0, MAX_ACTIVITY_LOG));
   };
 
@@ -648,7 +648,7 @@ export default function App() {
     setShowRatingModal(false);
     setRatingTargetPlayer(null);
     triggerAlert('Nota atualizada!', 'success');
-    logActivity(`avaliou ${ratingTargetPlayer.nome} (nova média ${avg})`);
+    logActivity(`avaliou ${ratingTargetPlayer.nome} (nova média ${avg})`, { type: 'rating', targetNome: ratingTargetPlayer.nome });
   };
 
   const handleDragStart = (e, player) => {
