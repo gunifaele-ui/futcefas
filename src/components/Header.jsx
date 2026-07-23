@@ -6,7 +6,7 @@ export default function Header({ isAdmin, currentAdmin, onLogoClick, onLeaveAdmi
 
   return (
     <header className="sticky top-0 bg-fc-dark text-white pt-3.5 pb-7 px-3.5 flex flex-col items-center justify-between z-40 shadow-nav overflow-hidden rounded-b-[28px]">
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-4 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
       <div className="flex items-center justify-center w-full max-w-md relative">
         <div onClick={onLogoClick} className="cursor-pointer py-1 px-2 rounded-xl active:scale-95 transition">
           <img src="/logo.png" alt="Futebol Cefas" className="h-14 w-auto drop-shadow-md" />

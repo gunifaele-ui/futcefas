@@ -104,6 +104,11 @@ function scoreDraft(teams, pairWeights) {
   return repeatCost * 1000 + balanceCost;
 }
 
+function orderTeamsByStrength(teams) {
+  const sorted = [...teams].sort((a, b) => a.ratingSum / a.players.length - b.ratingSum / b.players.length);
+  return sorted.map((t, i) => ({ ...t, id: `t${i + 1}`, name: `Time ${i + 1}` }));
+}
+
 function draftBalancedTeams(linePresent, numTimes, matchHistory) {
   const pairWeights = buildPairWeights(matchHistory);
   let bestTeams = null;
@@ -335,7 +340,7 @@ export default function App() {
     }
 
     const numTimes = linePresent.length > LIMIAR_QUATRO_TIMES ? 4 : 3;
-    const teams = draftBalancedTeams(linePresent, numTimes, matchHistory);
+    const teams = orderTeamsByStrength(draftBalancedTeams(linePresent, numTimes, matchHistory));
 
     const historyRecord = {
       id: `m-${Date.now()}`,
@@ -491,7 +496,7 @@ export default function App() {
   }, [players, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-fc-cream text-fc-dark flex flex-col font-sans select-none pb-28 relative overflow-x-hidden" style={bgTextureStyle}>
+    <div className="min-h-dvh bg-fc-cream text-fc-dark flex flex-col font-sans select-none pb-28 relative overflow-x-hidden" style={bgTextureStyle}>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="fc-blob absolute -top-16 -left-16 w-72 h-72 bg-fc-limesoft/40 rounded-full blur-3xl" />
         <div className="fc-blob absolute top-1/3 -right-20 w-80 h-80 bg-fc-lime/20 rounded-full blur-3xl" style={{ animationDelay: '2s' }} />

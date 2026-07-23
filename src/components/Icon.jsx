@@ -27,6 +27,7 @@ const PATHS = {
   calendar: <><rect x="3.5" y="5.5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3.5v4M16 3.5v4" /></>,
   ball: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4L12 7.5z" /><path d="M12 3.5v4M19.8 9.6l-3.7 2.9M17.2 19.2l-3.1-5M6.8 19.2l3.1-5M4.2 9.6l3.7 2.9" /></>,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>,
 };
 
 export default function Icon({ name, size = 18, className = '', strokeWidth = 1.75 }) {

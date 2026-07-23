@@ -42,11 +42,14 @@ function TeamCard({ team }) {
         <span className="font-semibold text-[14px] text-fc-dark">{team.name}</span>
         <span className="text-[11px] font-medium text-fc-dark/60 bg-fc-cream px-2.5 py-1 rounded-full">Força {forca}</span>
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div
+        className="grid gap-y-3"
+        style={{ gridTemplateColumns: `repeat(${team.players.length}, minmax(0, 1fr))` }}
+      >
         {team.players.map((p) => (
-          <div key={p.id} className="flex flex-col items-center gap-1.5 w-14 shrink-0">
+          <div key={p.id} className="flex flex-col items-center gap-1.5">
             <Avatar nome={p.nome} foto={p.foto} size="w-10 h-10" textSize="text-[10px]" />
-            <span className="text-[10px] font-medium text-fc-dark/80 text-center leading-tight break-words w-full">{p.nome}</span>
+            <span className="text-[10px] font-medium text-fc-dark/80 text-center leading-tight break-words w-full px-0.5">{p.nome}</span>
           </div>
         ))}
       </div>
@@ -70,15 +73,14 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
           <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">
             {teamsDrafted ? 'Times escalados' : 'Time vai ser tirado jajá'}
           </h2>
-          {teamsDrafted && <p className="text-[12px] text-fc-muted mt-0.5">Escalação pronta pro futebol de hoje.</p>}
         </div>
 
         {teamsDrafted && (
           <button
             onClick={onCopyTeams}
             title={copied ? 'Copiado!' : 'Copiar os times'}
-            className={`absolute top-3.5 right-3.5 w-9 h-9 rounded-full flex items-center justify-center transition ${
-              copied ? 'bg-fc-lime text-fc-dark' : 'bg-fc-cream hover:bg-fc-limesoft text-fc-dark/70'
+            className={`absolute top-3.5 left-3.5 w-9 h-9 rounded-full flex items-center justify-center transition ${
+              copied ? 'bg-fc-lime text-fc-dark' : 'bg-fc-limesoft text-fc-dark'
             }`}
           >
             <Icon name={copied ? 'check' : 'copy'} size={16} />
@@ -91,7 +93,7 @@ export default function TimesTab({ players, generatedTeams, teamsDrafted, isAdmi
           <Icon name="target" size={12} />
         </span>
         <p className="text-[11px] text-fc-dark/80 font-medium leading-snug">
-          Sorteio justo: os times saem balanceados por nível e evitam repetir as mesmas duplas dos últimos jogos, pra ninguém cair sempre no time fraco (ou sempre no forte).
+          Sorteio justo: os times saem balanceados por nível e evitam repetir as mesmas duplas dos últimos jogos, pra ninguém cair sempre no time fraco (ou sempre no forte). Como o Time 1 e o Time 2 sempre começam jogando, eles ficam com os times de menor força — os mais fortes (3 e/ou 4) começam esperando a vez. Cada partida dura até 7 min (ou 2 gols), num rodízio de 1 hora de jogo.
         </p>
       </div>
 

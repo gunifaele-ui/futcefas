@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '../Icon';
 
+const INITIAL_COUNT = 1;
 const PAGE_SIZE = 5;
 const INSIGHT_SIZE = 3;
 
@@ -8,12 +9,35 @@ function toDateInputValue(isoDate) {
   return isoDate.slice(0, 10);
 }
 
-function StatCard({ icon, title, badge, children }) {
+function InfoTooltip({ text }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        onBlur={() => setOpen(false)}
+        className="w-3.5 h-3.5 rounded-full border border-fc-dark/25 text-fc-dark/40 flex items-center justify-center text-[9px] font-semibold leading-none shrink-0"
+      >
+        i
+      </button>
+      {open && (
+        <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-10 w-52 bg-fc-dark text-white text-[11px] leading-snug rounded-lg px-2.5 py-2 shadow-lg">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StatCard({ icon, title, badge, info, children }) {
   return (
     <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
       <div className="flex items-center gap-2 mb-2.5">
         <Icon name={icon} size={15} className="text-fc-dark/50" />
         <h3 className="text-[13px] font-semibold text-fc-dark">{title}</h3>
+        {info && <InfoTooltip text={info} />}
         {badge && <span className="text-[10px] font-medium text-fc-dark/70 bg-fc-limesoft px-2 py-0.5 rounded-full">{badge}</span>}
       </div>
       {children}
@@ -45,7 +69,7 @@ function EmptyState({ children }) {
 
 export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onRequestDeleteMatch, onUpdateDate, onToggleWinner, onAddGoal, onRemoveGoal }) {
   const canEdit = isAdmin && !isViewer;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const visibleMatches = matchHistory.slice(0, visibleCount);
 
   const golRanking = useMemo(() => {
@@ -128,11 +152,13 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
     <div className="space-y-3">
       <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
         <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Estatísticas</h2>
-        <p className="text-[11px] text-fc-muted mt-0.5">Histórico das peladas, artilharia e quem mais venceu.</p>
       </div>
 
       <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
-        <h3 className="text-[13px] font-semibold text-fc-dark mb-2.5">Histórico</h3>
+        <div className="flex items-center gap-2 mb-2.5">
+          <h3 className="text-[13px] font-semibold text-fc-dark">Histórico</h3>
+          <InfoTooltip text="Registro dos sorteios já feitos, com os times formados e o resultado de cada pelada." />
+        </div>
         {matchHistory.length === 0 ? (
           <EmptyState>Nenhum sorteio registrado ainda.</EmptyState>
         ) : (
@@ -242,7 +268,7 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
         )}
       </div>
 
-      <StatCard icon="users" title="Dupla mais frequente">
+      <StatCard icon="users" title="Dupla mais frequente" info="As duplas de jogadores que mais vezes jogaram juntas no mesmo time.">
         {pairRanking.length === 0 ? (
           <EmptyState>Sem dados ainda.</EmptyState>
         ) : (
@@ -252,7 +278,7 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
         )}
       </StatCard>
 
-      <StatCard icon="target" title="Sempre presente">
+      <StatCard icon="target" title="Sempre presente" info="Jogadores com a maior taxa de presença entre todas as peladas registradas.">
         {attendanceRanking.length === 0 ? (
           <EmptyState>Sem dados ainda.</EmptyState>
         ) : (
@@ -262,7 +288,7 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
         )}
       </StatCard>
 
-      <StatCard icon="flame" title="Sequência atual">
+      <StatCard icon="flame" title="Sequência atual" info="Quantas peladas seguidas, contando as mais recentes, cada jogador vem participando sem faltar.">
         {streakRanking.length === 0 ? (
           <EmptyState>Sem dados ainda.</EmptyState>
         ) : (
@@ -274,7 +300,7 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
 
       {isAdmin && (
         <>
-          <StatCard icon="trophy" title="Ranking de vitórias" badge="Beta">
+          <StatCard icon="trophy" title="Ranking de vitórias" badge="Beta" info="Jogadores com mais vitórias somando todas as peladas registradas.">
             {winRanking.length === 0 ? (
               <EmptyState>Sem dados ainda.</EmptyState>
             ) : (
@@ -282,7 +308,7 @@ export default function EstatisticasTab({ matchHistory, isAdmin, isViewer, onReq
             )}
           </StatCard>
 
-          <StatCard icon="ball" title="Ranking de gols" badge="Beta">
+          <StatCard icon="ball" title="Ranking de gols" badge="Beta" info="Artilheiros: jogadores que mais marcaram gols somando todas as peladas registradas.">
             {golRanking.length === 0 ? (
               <EmptyState>Sem dados ainda.</EmptyState>
             ) : (
