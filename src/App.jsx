@@ -34,6 +34,7 @@ const DRAFT_CANDIDATES = 60;
 const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
 const MAX_ACTIVITY_LOG = 150;
 const LAST_SEEN_ACTIVITY_KEY = 'fc_last_seen_activity_ts';
+const ACTIVITY_WINDOW_MS = 12 * 60 * 60 * 1000;
 const ADMIN_SESSION_KEY = 'fc_admin_session';
 
 function readStoredSession() {
@@ -165,7 +166,11 @@ export default function App() {
   const seenDraftEventId = useRef(null);
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [lastSeenActivityTs, setLastSeenActivityTs] = useState(() => Number(localStorage.getItem(LAST_SEEN_ACTIVITY_KEY)) || 0);
-  const hasUnreadActivity = activityLog.some((entry) => entry.timestamp > lastSeenActivityTs);
+  const recentActivityLog = useMemo(
+    () => activityLog.filter((entry) => Date.now() - entry.timestamp <= ACTIVITY_WINDOW_MS),
+    [activityLog]
+  );
+  const hasUnreadActivity = recentActivityLog.some((entry) => entry.timestamp > lastSeenActivityTs);
 
   const [activeTab, setActiveTab] = useState('times');
   const [currentAdmin, setCurrentAdmin] = useState(() => readStoredSession()?.key ?? null);
@@ -855,7 +860,7 @@ export default function App() {
 
       {showActivityLog && (
         <ActivityLogModal
-          activityLog={activityLog}
+          activityLog={recentActivityLog}
           admins={admins}
           onClose={() => setShowActivityLog(false)}
         />

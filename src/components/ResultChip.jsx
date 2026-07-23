@@ -1,6 +1,6 @@
 import Icon from './Icon';
 
-export default function ResultChip({ icon, label, count, tone, canEdit, onAdd, onRemove }) {
+export default function ResultChip({ icon, label, shortLabel, count, tone, canEdit, onAdd, onRemove }) {
   if (!canEdit && count === 0) return null;
 
   return (
@@ -14,6 +14,7 @@ export default function ResultChip({ icon, label, count, tone, canEdit, onAdd, o
       }`}
     >
       <Icon name={icon} size={10} />
+      <span>{shortLabel || label}</span>
       <span>{count}</span>
       {canEdit && count > 0 && (
         <span

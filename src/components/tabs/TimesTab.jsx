@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
 import ResultChip from '../ResultChip';
+import PlayerStatTrigger from '../PlayerStatTrigger';
 
 const PIX_KEY = '+5515997228483';
 const PIX_KEY_LABEL = '(15) 99722-8483';
-const LONG_PRESS_MS = 500;
 
 function PixCard() {
   const [copied, setCopied] = useState(false);
@@ -35,87 +35,27 @@ function PixCard() {
   );
 }
 
-function StatMenu({ options, onClose }) {
-  return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={onClose} onTouchStart={onClose} />
-      <div className="absolute z-50 top-full mt-1.5 left-1/2 -translate-x-1/2 bg-fc-dark rounded-xl shadow-lg p-1 flex gap-0.5">
-        {options.map((opt) => (
-          <button
-            key={opt.key}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              opt.onSelect();
-              onClose();
-            }}
-            className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-lg hover:bg-white/10 active:bg-white/10 text-white transition whitespace-nowrap"
-          >
-            <Icon name={opt.icon} size={15} />
-            <span className="text-[9px] font-medium">{opt.label}</span>
-          </button>
-        ))}
-      </div>
-    </>
-  );
-}
-
 function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist }) {
-  const [menu, setMenu] = useState(null); // null | 'add' | 'remove'
-  const pressTimer = useRef(null);
-
   const gols = statEntry?.gols || 0;
   const assistencias = statEntry?.assistencias || 0;
   const hasStat = gols > 0 || assistencias > 0;
   const canInteract = canEdit && !!matchId;
 
-  const clearTimer = () => {
-    clearTimeout(pressTimer.current);
-    pressTimer.current = null;
-  };
-
-  const startPress = () => {
-    if (!canInteract) return;
-    clearTimer();
-    pressTimer.current = setTimeout(() => setMenu('add'), LONG_PRESS_MS);
-  };
-
-  const handleDoubleClick = () => {
-    if (!canInteract || !hasStat) return;
-    if (gols > 0 && assistencias > 0) {
-      setMenu('remove');
-    } else if (gols > 0) {
-      onRemoveGoal(matchId, p.id);
-    } else {
-      onRemoveAssist(matchId, p.id);
-    }
-  };
-
-  const addOptions = [
-    { key: 'gol', icon: 'ball', label: 'Gol', onSelect: () => onAddGoal(matchId, p.id, p.nome) },
-    { key: 'assist', icon: 'assist', label: 'Assist.', onSelect: () => onAddAssist(matchId, p.id, p.nome) },
-  ];
-  const removeOptions = [
-    gols > 0 && { key: 'gol', icon: 'ball', label: 'Tirar gol', onSelect: () => onRemoveGoal(matchId, p.id) },
-    assistencias > 0 && { key: 'assist', icon: 'assist', label: 'Tirar assist.', onSelect: () => onRemoveAssist(matchId, p.id) },
-  ].filter(Boolean);
-
   return (
-    <div className="relative flex flex-col items-center gap-1">
+    <PlayerStatTrigger
+      canEdit={canInteract}
+      gols={gols}
+      assistencias={assistencias}
+      onAddGoal={() => onAddGoal(matchId, p.id, p.nome)}
+      onAddAssist={() => onAddAssist(matchId, p.id, p.nome)}
+      onRemoveGoal={() => onRemoveGoal(matchId, p.id)}
+      onRemoveAssist={() => onRemoveAssist(matchId, p.id)}
+      className="w-full flex flex-col items-center"
+    >
       <div
-        onMouseDown={startPress}
-        onMouseUp={clearTimer}
-        onMouseLeave={clearTimer}
-        onTouchStart={startPress}
-        onTouchEnd={clearTimer}
-        onTouchMove={clearTimer}
-        onTouchCancel={clearTimer}
-        onDoubleClick={handleDoubleClick}
-        onContextMenu={(e) => canInteract && e.preventDefault()}
-        className={`flex flex-col items-center gap-1.5 select-none rounded-xl px-1 py-1 -m-1 transition ${
+        className={`flex flex-col items-center gap-1.5 rounded-xl px-1 py-1 -m-1 transition ${
           canInteract ? 'active:scale-95 active:bg-fc-cream' : ''
         }`}
-        style={{ touchAction: 'manipulation' }}
       >
         <Avatar nome={p.nome} foto={p.foto} size="w-10 h-10" textSize="text-[10px]" />
         <span className="text-[10px] font-medium text-fc-dark/80 text-center leading-tight break-words w-full px-0.5">{p.nome}</span>
@@ -134,16 +74,13 @@ function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemov
           </span>
         )}
       </div>
-      {menu === 'add' && <StatMenu options={addOptions} onClose={() => setMenu(null)} />}
-      {menu === 'remove' && <StatMenu options={removeOptions} onClose={() => setMenu(null)} />}
-    </div>
+    </PlayerStatTrigger>
   );
 }
 
 function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist, onAddResult, onRemoveResult }) {
   const forca = team.players.length > 0 ? (team.ratingSum / team.players.length).toFixed(2) : '0.00';
   const vitorias = matchTeam?.vitorias || 0;
-  const empates = matchTeam?.empates || 0;
 
   return (
     <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
@@ -151,26 +88,16 @@ function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, on
         <span className="font-semibold text-[14px] text-fc-dark shrink-0">{team.name}</span>
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {matchId && (
-            <>
-              <ResultChip
-                icon="trophy"
-                label="Vitória"
-                count={vitorias}
-                tone="border-fc-lime/50 bg-fc-limesoft text-fc-dark"
-                canEdit={canEdit}
-                onAdd={() => onAddResult(matchId, team.id, 'vitorias')}
-                onRemove={() => onRemoveResult(matchId, team.id, 'vitorias')}
-              />
-              <ResultChip
-                icon="draw"
-                label="Empate"
-                count={empates}
-                tone="border-fc-line bg-fc-cream text-fc-dark/70"
-                canEdit={canEdit}
-                onAdd={() => onAddResult(matchId, team.id, 'empates')}
-                onRemove={() => onRemoveResult(matchId, team.id, 'empates')}
-              />
-            </>
+            <ResultChip
+              icon="trophy"
+              label="Vitória"
+              shortLabel="Vitória"
+              count={vitorias}
+              tone="border-fc-lime/50 bg-fc-limesoft text-fc-dark"
+              canEdit={canEdit}
+              onAdd={() => onAddResult(matchId, team.id, 'vitorias')}
+              onRemove={() => onRemoveResult(matchId, team.id, 'vitorias')}
+            />
           )}
           <span className="text-[11px] font-medium text-fc-dark/60 bg-fc-cream px-2.5 py-1 rounded-full shrink-0">Força {forca}</span>
         </div>
@@ -275,7 +202,7 @@ export default function TimesTab({
             <Icon name="info" size={12} />
           </span>
           <p className="text-[11px] text-fc-dark/70 leading-snug">
-            Segure o nome de quem fez gol ou deu assistência. Já marcou? Dois toques rápidos no nome tiram a marcação. Os botões de vitória/empate ficam no topo de cada time.
+            Toque no nome de quem fez gol ou deu assistência. Já marcou? Dois toques rápidos no nome tiram a marcação. O botão de vitória fica no topo de cada time.
           </p>
         </div>
       )}

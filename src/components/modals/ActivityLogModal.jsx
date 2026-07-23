@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import BottomSheet from '../BottomSheet';
 import Icon from '../Icon';
 import { getAdminLabel } from '../../utils/adminLabels';
+
+const INITIAL_COUNT = 10;
+const PAGE_SIZE = 10;
 
 function formatWhen(timestamp) {
   const date = new Date(timestamp);
@@ -12,6 +16,9 @@ function formatWhen(timestamp) {
 }
 
 export default function ActivityLogModal({ activityLog, admins, onClose }) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+  const visibleEntries = activityLog.slice(0, visibleCount);
+
   return (
     <BottomSheet onClose={onClose}>
       <h3 className="text-[15px] font-semibold text-fc-dark mb-3.5 flex items-center gap-2">
@@ -19,10 +26,10 @@ export default function ActivityLogModal({ activityLog, admins, onClose }) {
       </h3>
 
       {activityLog.length === 0 ? (
-        <p className="text-[12px] text-fc-muted text-center py-6">Nenhuma ação registrada ainda.</p>
+        <p className="text-[12px] text-fc-muted text-center py-6">Nenhuma ação nas últimas 12h.</p>
       ) : (
         <div className="space-y-2">
-          {activityLog.map((entry) => (
+          {visibleEntries.map((entry) => (
             <div key={entry.id} className="border border-fc-line rounded-xl p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-medium text-fc-dark leading-snug">
@@ -32,6 +39,16 @@ export default function ActivityLogModal({ activityLog, admins, onClose }) {
               <p className="text-[10px] text-fc-muted mt-1">{formatWhen(entry.timestamp)}</p>
             </div>
           ))}
+
+          {visibleCount < activityLog.length && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="w-full text-[12px] font-medium text-fc-dark/70 bg-fc-cream hover:bg-fc-line py-2.5 rounded-xl transition"
+            >
+              Ver mais
+            </button>
+          )}
         </div>
       )}
     </BottomSheet>

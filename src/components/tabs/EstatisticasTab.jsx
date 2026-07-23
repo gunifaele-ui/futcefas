@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import Icon from '../Icon';
 import ResultChip from '../ResultChip';
 import PlayerSpotlightCard from '../PlayerSpotlightCard';
+import PlayerStatTrigger from '../PlayerStatTrigger';
 
 const INITIAL_COUNT = 1;
 const PAGE_SIZE = 5;
@@ -319,6 +320,11 @@ export default function EstatisticasTab({
         <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Estatísticas</h2>
       </div>
 
+      <div className="flex items-center gap-2 px-1">
+        <h3 className="text-[12px] font-semibold text-fc-dark/70">Destaque do mês</h3>
+        <InfoTooltip text="O artilheiro e o garçom só do mês atual, considerando as peladas registradas nesse período." />
+      </div>
+
       <div className="grid grid-cols-2 gap-2.5">
         <PlayerSpotlightCard
           badgeIcon="ball"
@@ -340,6 +346,11 @@ export default function EstatisticasTab({
           mainUnit={topAssistMonth?.stat.assistencias === 1 ? 'assist.' : 'assists.'}
           stats={topAssistMonth ? buildSpotlightStats(topAssistMonth.stat, 'Gols', topAssistMonth.stat.gols) : []}
         />
+      </div>
+
+      <div className="flex items-center gap-2 px-1">
+        <h3 className="text-[12px] font-semibold text-fc-dark/70">Líderes gerais</h3>
+        <InfoTooltip text="Quem está na frente em cada categoria, somando todas as peladas já registradas (diferente do destaque do mês acima)." />
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -373,15 +384,60 @@ export default function EstatisticasTab({
         />
       </div>
 
-      <RankingCard icon="ball" title="Artilheiros" tone="warm" entries={golRanking} emptyText="Nenhum gol registrado ainda." />
-      <RankingCard icon="assist" title="Assistências" tone="dark" entries={assistRanking} emptyText="Nenhuma assistência registrada ainda." />
-      <RankingCard icon="trophy" title="Ranking de vitórias" tone="accent" entries={winRanking} emptyText="Nenhuma vitória registrada ainda." />
+      <RankingCard
+        icon="ball"
+        title="Artilheiros"
+        tone="warm"
+        entries={golRanking}
+        emptyText="Nenhum gol registrado ainda."
+        info="Jogadores que mais marcaram gols somando todas as peladas registradas."
+      />
+      <RankingCard
+        icon="assist"
+        title="Assistências"
+        tone="dark"
+        entries={assistRanking}
+        emptyText="Nenhuma assistência registrada ainda."
+        info="Jogadores que mais deram assistências somando todas as peladas registradas."
+      />
+      <RankingCard
+        icon="trophy"
+        title="Ranking de vitórias"
+        tone="accent"
+        entries={winRanking}
+        emptyText="Nenhuma vitória registrada ainda."
+        info="Jogadores com mais vitórias somando todas as peladas registradas (cada vitória do time conta pra todo mundo que jogou nele)."
+      />
 
       <div className="grid grid-cols-1 gap-3">
-        <RankingCard icon="users" title="Dupla mais frequente" tone="neutral" entries={pairRanking} emptyText="Sem dados ainda." limit={INSIGHT_SIZE} />
+        <RankingCard
+          icon="users"
+          title="Dupla mais frequente"
+          tone="neutral"
+          entries={pairRanking}
+          emptyText="Sem dados ainda."
+          limit={INSIGHT_SIZE}
+          info="As duplas de jogadores que mais vezes jogaram juntas no mesmo time."
+        />
         <div className="grid grid-cols-2 gap-3">
-          <RankingCard icon="target" title="Sempre presente" tone="neutral" entries={attendanceRanking} emptyText="Sem dados ainda." limit={INSIGHT_SIZE} />
-          <RankingCard icon="flame" title="Sequência atual" tone="warm" entries={streakRanking} emptyText="Sem dados ainda." limit={INSIGHT_SIZE} />
+          <RankingCard
+            icon="target"
+            title="Sempre presente"
+            tone="neutral"
+            entries={attendanceRanking}
+            emptyText="Sem dados ainda."
+            limit={INSIGHT_SIZE}
+            info="Jogadores com a maior taxa de presença entre todas as peladas registradas."
+          />
+          <RankingCard
+            icon="flame"
+            title="Sequência atual"
+            tone="warm"
+            entries={streakRanking}
+            emptyText="Sem dados ainda."
+            limit={INSIGHT_SIZE}
+            info="Quantas peladas seguidas, contando as mais recentes, cada jogador vem participando sem faltar."
+          />
         </div>
       </div>
 
@@ -421,7 +477,6 @@ export default function EstatisticasTab({
                 <div className="space-y-2">
                   {m.teams.map((t) => {
                     const vitorias = teamResultCount(m, t, 'vitorias');
-                    const empates = teamResultCount(m, t, 'empates');
                     return (
                       <div
                         key={t.id}
@@ -429,26 +484,16 @@ export default function EstatisticasTab({
                       >
                         <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
                           <span className="text-[12px] font-medium text-fc-dark">{t.name}</span>
-                          <div className="flex items-center gap-1">
-                            <ResultChip
-                              icon="trophy"
-                              label="Vitória"
-                              count={vitorias}
-                              tone="border-fc-lime/50 bg-white text-fc-dark"
-                              canEdit={canEdit}
-                              onAdd={() => onAddResult(m.id, t.id, 'vitorias')}
-                              onRemove={() => onRemoveResult(m.id, t.id, 'vitorias')}
-                            />
-                            <ResultChip
-                              icon="draw"
-                              label="Empate"
-                              count={empates}
-                              tone="border-fc-line bg-white text-fc-dark/70"
-                              canEdit={canEdit}
-                              onAdd={() => onAddResult(m.id, t.id, 'empates')}
-                              onRemove={() => onRemoveResult(m.id, t.id, 'empates')}
-                            />
-                          </div>
+                          <ResultChip
+                            icon="trophy"
+                            label="Vitória"
+                            shortLabel="Vitória"
+                            count={vitorias}
+                            tone="border-fc-lime/50 bg-white text-fc-dark"
+                            canEdit={canEdit}
+                            onAdd={() => onAddResult(m.id, t.id, 'vitorias')}
+                            onRemove={() => onRemoveResult(m.id, t.id, 'vitorias')}
+                          />
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {t.players.map((p) => {
@@ -456,11 +501,21 @@ export default function EstatisticasTab({
                             const gols = goalEntry?.gols || 0;
                             const assistencias = goalEntry?.assistencias || 0;
 
-                            if (!canEdit) {
-                              return (
+                            return (
+                              <PlayerStatTrigger
+                                key={p.id}
+                                canEdit={canEdit}
+                                gols={gols}
+                                assistencias={assistencias}
+                                onAddGoal={() => onAddGoal(m.id, p.id, p.nome)}
+                                onAddAssist={() => onAddAssist(m.id, p.id, p.nome)}
+                                onRemoveGoal={() => onRemoveGoal(m.id, p.id)}
+                                onRemoveAssist={() => onRemoveAssist(m.id, p.id)}
+                              >
                                 <span
-                                  key={p.id}
-                                  className="text-[11px] font-medium text-fc-dark/80 bg-white border border-fc-line rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1"
+                                  className={`text-[11px] font-medium text-fc-dark/80 bg-white border border-fc-line rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1 transition ${
+                                    canEdit ? 'active:scale-95' : ''
+                                  }`}
                                 >
                                   {p.nome}
                                   {gols > 0 && (
@@ -474,44 +529,7 @@ export default function EstatisticasTab({
                                     </span>
                                   )}
                                 </span>
-                              );
-                            }
-
-                            return (
-                              <span
-                                key={p.id}
-                                className="text-[11px] font-medium text-fc-dark/80 bg-white border border-fc-line rounded-full pl-2 pr-1 py-0.5 flex items-center gap-1"
-                              >
-                                <button type="button" onClick={() => onAddGoal(m.id, p.id, p.nome)} title="Marcar gol">
-                                  {p.nome}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onAddAssist(m.id, p.id, p.nome)}
-                                  title="Marcar assistência"
-                                  className="w-4 h-4 rounded-full bg-fc-cream hover:bg-fc-line text-fc-dark/50 hover:text-fc-dark flex items-center justify-center transition shrink-0"
-                                >
-                                  <Icon name="assist" size={8} strokeWidth={2.2} />
-                                </button>
-                                {gols > 0 && (
-                                  <span
-                                    onClick={() => onRemoveGoal(m.id, p.id)}
-                                    title="Tirar gol"
-                                    className="flex items-center gap-0.5 text-[10px] font-medium text-white bg-fc-coral rounded-full px-1.5 py-0.5 shrink-0"
-                                  >
-                                    {gols}
-                                  </span>
-                                )}
-                                {assistencias > 0 && (
-                                  <span
-                                    onClick={() => onRemoveAssist(m.id, p.id)}
-                                    title="Tirar assistência"
-                                    className="flex items-center gap-0.5 text-[10px] font-medium text-white bg-fc-dark/70 rounded-full px-1.5 py-0.5 shrink-0"
-                                  >
-                                    {assistencias}
-                                  </span>
-                                )}
-                              </span>
+                              </PlayerStatTrigger>
                             );
                           })}
                         </div>
