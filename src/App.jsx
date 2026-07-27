@@ -72,10 +72,12 @@ export default function App() {
   const [teamsDrafted, setTeamsDrafted] = useFirestoreField('teamsDrafted', false);
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
   const [ratingHistory, setRatingHistory] = useFirestoreField('ratingHistory', []);
-  const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
-  const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
-  const [admins, setAdmins] = useFirestoreField('admins', DEFAULT_ADMINS);
-  const [admPrepActive, setAdmPrepActive] = useFirestoreField('admPrepActive', false);
+  const safePlayers = useMemo(() => (Array.isArray(players) ? players : []), [players]);
+  const safeGeneratedTeams = useMemo(() => (Array.isArray(generatedTeams) ? generatedTeams : []), [generatedTeams]);
+  const safeMatchHistory = useMemo(() => (Array.isArray(matchHistory) ? matchHistory : []), [matchHistory]);
+  const safeRatingHistory = useMemo(() => (Array.isArray(ratingHistory) ? ratingHistory : []), [ratingHistory]);
+  const safeActivityLog = useMemo(() => (Array.isArray(activityLog) ? activityLog : []), [activityLog]);
+  const safeAdmins = useMemo(() => (Array.isArray(admins) ? admins : DEFAULT_ADMINS), [admins]);
 
   const handleStartNextFut = () => {
     setAdmPrepActive(true);
@@ -90,10 +92,10 @@ export default function App() {
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [lastSeenActivityTs, setLastSeenActivityTs] = useState(() => Number(localStorage.getItem(LAST_SEEN_ACTIVITY_KEY)) || 0);
   const recentActivityLog = useMemo(
-    () => activityLog.filter((entry) => Date.now() - entry.timestamp <= ACTIVITY_WINDOW_MS),
-    [activityLog]
+    () => safeActivityLog.filter((entry) => entry && Date.now() - (entry.timestamp || 0) <= ACTIVITY_WINDOW_MS),
+    [safeActivityLog]
   );
-  const hasUnreadActivity = recentActivityLog.some((entry) => entry.timestamp > lastSeenActivityTs);
+  const hasUnreadActivity = recentActivityLog.some((entry) => entry && entry.timestamp > lastSeenActivityTs);
 
   const [activeTab, setActiveTab] = useState('times');
   const [currentAdmin, setCurrentAdmin] = useState(() => readStoredSession()?.key ?? null);
@@ -107,7 +109,10 @@ export default function App() {
   function isMatchLocked(match) {
     if (!match) return false;
     if (match.finalizado) return true;
-    return Date.now() - new Date(match.date).getTime() > MATCH_EDIT_WINDOW_MS;
+    if (!match.date) return false;
+    const matchTime = new Date(match.date).getTime();
+    if (isNaN(matchTime)) return false;
+    return Date.now() - matchTime > MATCH_EDIT_WINDOW_MS;
   }
 
   // Gols, assistências e vitórias ficam livres pra qualquer um marcar (ADM ou não),
@@ -142,8 +147,8 @@ export default function App() {
   const [profileTargetPlayer, setProfileTargetPlayer] = useState(null);
 
   const badgesByPlayerId = useMemo(
-    () => computeBadgesForPlayers(effectivePlayers, effectiveMatchHistory, effectiveRatingHistory),
-    [effectivePlayers, effectiveMatchHistory, effectiveRatingHistory]
+    () => computeBadgesForPlayers(safePlayers, safeMatchHistory, safeRatingHistory),
+    [safePlayers, safeMatchHistory, safeRatingHistory]
   );
 
   const triggerAlert = (message, type = 'info') => {
@@ -761,18 +766,20 @@ export default function App() {
     setPlayers(players.map((p) => (p.id === playerId ? { ...p, posicaoFixa: targetPos } : p)));
   };
 
-  const linePlayersList = useMemo(() => effectivePlayers.filter((p) => p.posicaoFixa === 'Linha'), [effectivePlayers]);
-  const goalkeepersList = useMemo(() => effectivePlayers.filter((p) => p.posicaoFixa === 'Goleiro'), [effectivePlayers]);
+  const linePlayersList = useMemo(() => safePlayers.filter((p) => p.posicaoFixa === 'Linha'), [safePlayers]);
+  const goalkeepersList = useMemo(() => safePlayers.filter((p) => p.posicaoFixa === 'Goleiro'), [safePlayers]);
   const allLinePresent = linePlayersList.length > 0 && linePlayersList.every((p) => p.statusPresenca);
   const allGoalkeepersPresent = goalkeepersList.length > 0 && goalkeepersList.every((p) => p.statusPresenca);
 
   const filteredSearchList = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    return effectivePlayers.filter((p) => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [effectivePlayers, searchQuery]);
+    return safePlayers.filter((p) => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [safePlayers, searchQuery]);
+
+
 
   return (
-    <div className="min-h-dvh bg-fc-cream text-fc-ink flex flex-col font-sans select-none pb-24 md:pb-8 relative overflow-x-hidden" style={bgTextureStyle}>
+    <div className="min-h-screen flex flex-col font-sans text-fc-ink bg-fc-surface relative" style={bgTextureStyle}>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="fc-blob absolute -top-16 -left-16 w-72 h-72 bg-fc-limesoft/40 rounded-full blur-3xl" />
         <div className="fc-blob absolute top-1/3 -right-20 w-80 h-80 bg-fc-lime/20 rounded-full blur-3xl" style={{ animationDelay: '2s' }} />
@@ -783,7 +790,7 @@ export default function App() {
       <UndoToast state={undoState} onUndo={handleUndo} />
       <DraftNotification
         notice={draftNotice}
-        admins={admins}
+        admins={safeAdmins}
         onView={() => { setActiveTab('times'); setDraftNotice(null); }}
         onDismiss={() => setDraftNotice(null)}
       />
@@ -791,7 +798,7 @@ export default function App() {
       <Header
         isAdmin={isAdmin}
         currentAdmin={currentAdmin}
-        admins={admins}
+        admins={safeAdmins}
         onLogoClick={handleLogoClick}
         onLeaveAdmin={() => { setCurrentAdmin(null); writeStoredSession(null); setActiveTab('times'); triggerAlert('Saiu do modo ADM', 'info'); }}
         hasUnreadActivity={hasUnreadActivity}
@@ -808,7 +815,7 @@ export default function App() {
         ) : (
           <>
         {activeTab === 'times' && (() => {
-          const latestMatch = matchHistory[0];
+          const latestMatch = safeMatchHistory[0];
           const isLatestMatchFinalized = latestMatch?.finalizado === true;
           const shouldShowSummaryDash =
             !teamsDrafted &&
@@ -817,15 +824,15 @@ export default function App() {
 
           return (
             <TimesTab
-              players={players}
-              generatedTeams={generatedTeams}
+              players={safePlayers}
+              generatedTeams={safeGeneratedTeams}
               teamsDrafted={teamsDrafted}
-              currentMatch={teamsDrafted ? matchHistory[0] : null}
+              currentMatch={teamsDrafted ? safeMatchHistory[0] : null}
               isAdmin={isAdmin}
               isViewer={isViewer}
               isRealAdmin={isRealAdmin}
-              canEditStats={canEditMatchStats(teamsDrafted ? matchHistory[0] : null)}
-              matchLocked={isMatchLocked(teamsDrafted ? matchHistory[0] : null)}
+              canEditStats={canEditMatchStats(teamsDrafted ? safeMatchHistory[0] : null)}
+              matchLocked={isMatchLocked(teamsDrafted ? safeMatchHistory[0] : null)}
               copied={copied}
               showSummaryDash={shouldShowSummaryDash}
               summaryMatch={latestMatch}
@@ -839,9 +846,9 @@ export default function App() {
               onRemoveAssist={handleRemoveAssist}
               onAddResult={handleAddResult}
               onRemoveResult={handleRemoveResult}
-              onRequestFinalize={() => matchHistory[0] && setMatchPendingFinalize(matchHistory[0].id)}
+              onRequestFinalize={() => safeMatchHistory[0] && setMatchPendingFinalize(safeMatchHistory[0].id)}
               presencaProps={{
-                players,
+                players: safePlayers,
                 isViewer,
                 linePlayersList,
                 goalkeepersList,
@@ -867,8 +874,8 @@ export default function App() {
 
         {activeTab === 'jogadores' && (
           <JogadoresTab
-            players={players}
-            matchHistory={matchHistory}
+            players={safePlayers}
+            matchHistory={safeMatchHistory}
             badgesByPlayerId={badgesByPlayerId}
             onOpenProfile={setProfileTargetPlayer}
           />
@@ -876,8 +883,8 @@ export default function App() {
 
         {activeTab === 'notas' && isAdmin && (
           <NotasTab
-            players={players}
-            admins={admins}
+            players={safePlayers}
+            admins={safeAdmins}
             isViewer={isViewer}
             badgesByPlayerId={badgesByPlayerId}
             onOpenProfile={setProfileTargetPlayer}
@@ -891,8 +898,8 @@ export default function App() {
 
         {activeTab === 'estatisticas' && (
           <EstatisticasTab
-            matchHistory={matchHistory}
-            players={players}
+            matchHistory={safeMatchHistory}
+            players={safePlayers}
             isAdmin={isAdmin}
             isViewer={isViewer}
             canEditStats={canEditMatchStats}

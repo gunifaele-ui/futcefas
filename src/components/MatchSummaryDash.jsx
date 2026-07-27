@@ -14,28 +14,33 @@ export default function MatchSummaryDash({
   const stats = useMemo(() => {
     if (!match) return null;
 
-    const teams = match.teams || [];
-    const goals = match.goals || [];
+    const teams = Array.isArray(match.teams) ? match.teams : [];
+    const goals = Array.isArray(match.goals) ? match.goals : [];
+    const safePlayers = Array.isArray(players) ? players : [];
 
     // 1. Campeão do Dia (Time com mais vitórias)
-    const maxVitorias = Math.max(...teams.map((t) => t.vitorias || 0), 0);
-    const winningTeams = teams.filter((t) => (t.vitorias || 0) === maxVitorias && maxVitorias > 0);
-    const winningTeamIds = new Set(winningTeams.map((t) => t.id));
+    const maxVitorias = teams.length > 0 ? Math.max(...teams.map((t) => (t && typeof t.vitorias === 'number' ? t.vitorias : 0)), 0) : 0;
+    const winningTeams = teams.filter((t) => t && (t.vitorias || 0) === maxVitorias && maxVitorias > 0);
+    const winningTeamIds = new Set(winningTeams.map((t) => t.id).filter(Boolean));
 
     // Mapear jogadores aos times pra saber quem ganhou
     const teamPlayerMap = new Map();
     teams.forEach((t) => {
-      (t.players || []).forEach((p) => teamPlayerMap.set(p.id, t.id));
+      if (t && Array.isArray(t.players)) {
+        t.players.forEach((p) => {
+          if (p && p.id) teamPlayerMap.set(p.id, t.id);
+        });
+      }
     });
 
     // 2. Artilheiro do Dia
     let topScorers = [];
     let maxGols = 0;
     goals.forEach((g) => {
-      if ((g.gols || 0) > maxGols) {
+      if (g && (g.gols || 0) > maxGols) {
         maxGols = g.gols;
         topScorers = [g];
-      } else if ((g.gols || 0) === maxGols && maxGols > 0) {
+      } else if (g && (g.gols || 0) === maxGols && maxGols > 0) {
         topScorers.push(g);
       }
     });
@@ -44,26 +49,26 @@ export default function MatchSummaryDash({
     let topAssisters = [];
     let maxAssists = 0;
     goals.forEach((g) => {
-      if ((g.assistencias || 0) > maxAssists) {
+      if (g && (g.assistencias || 0) > maxAssists) {
         maxAssists = g.assistencias;
         topAssisters = [g];
-      } else if ((g.assistencias || 0) === maxAssists && maxAssists > 0) {
+      } else if (g && (g.assistencias || 0) === maxAssists && maxAssists > 0) {
         topAssisters.push(g);
       }
     });
 
     // 4. MVP / Cara da Rodada
-    // Pontuação MVP: gols * 3 + assistencias * 2 + (time campeão ? 2 : 0)
     let topMvpScore = -1;
     let mvpPlayers = [];
 
-    const allPlayerIds = new Set([
-      ...goals.map((g) => g.playerId),
-      ...teams.flatMap((t) => (t.players || []).map((p) => p.id)),
-    ]);
+    const rawPlayerIds = [
+      ...goals.map((g) => g?.playerId),
+      ...teams.flatMap((t) => (Array.isArray(t?.players) ? t.players.map((p) => (p && typeof p === 'object' ? p.id : p)) : [])),
+    ];
+    const allPlayerIds = new Set(rawPlayerIds.filter(Boolean));
 
     allPlayerIds.forEach((playerId) => {
-      const gEntry = goals.find((g) => g.playerId === playerId);
+      const gEntry = goals.find((g) => g && g.playerId === playerId);
       const gols = gEntry?.gols || 0;
       const assistencias = gEntry?.assistencias || 0;
       const teamId = teamPlayerMap.get(playerId);
@@ -72,16 +77,16 @@ export default function MatchSummaryDash({
       const score = gols * 3 + assistencias * 2 + (isWinner ? 2 : 0);
       if (score > topMvpScore && score > 0) {
         topMvpScore = score;
-        const pObj = players.find((p) => p.id === playerId) || { id: playerId, nome: gEntry?.nome || 'Jogador' };
+        const pObj = safePlayers.find((p) => p && p.id === playerId) || { id: playerId, nome: gEntry?.nome || gEntry?.playerName || 'Jogador' };
         mvpPlayers = [{ player: pObj, gols, assistencias, score, isWinner }];
       } else if (score === topMvpScore && score > 0) {
-        const pObj = players.find((p) => p.id === playerId) || { id: playerId, nome: gEntry?.nome || 'Jogador' };
+        const pObj = safePlayers.find((p) => p && p.id === playerId) || { id: playerId, nome: gEntry?.nome || gEntry?.playerName || 'Jogador' };
         mvpPlayers.push({ player: pObj, gols, assistencias, score, isWinner });
       }
     });
 
-    const totalGols = goals.reduce((sum, g) => sum + (g.gols || 0), 0);
-    const totalAssistencias = goals.reduce((sum, g) => sum + (g.assistencias || 0), 0);
+    const totalGols = goals.reduce((sum, g) => sum + (g?.gols || 0), 0);
+    const totalAssistencias = goals.reduce((sum, g) => sum + (g?.assistencias || 0), 0);
 
     return {
       teams,
@@ -101,12 +106,13 @@ export default function MatchSummaryDash({
 
   if (!stats) return null;
 
-  const formattedDate = match.date
+  const formattedDate = match?.date
     ? new Date(match.date).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
     : 'Partida Finalizada';
 
   const getPlayerData = (playerId, fallbackName) => {
-    const p = players.find((pl) => pl.id === playerId);
+    const safePlayers = Array.isArray(players) ? players : [];
+    const p = safePlayers.find((pl) => pl && pl.id === playerId);
     return {
       nome: p?.nome || fallbackName || 'Jogador',
       foto: p?.foto || null,

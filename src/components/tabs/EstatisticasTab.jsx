@@ -14,7 +14,12 @@ const INSIGHT_SIZE = 3;
 const RANKING_LIMIT = 5;
 
 function toDateInputValue(isoDate) {
-  return isoDate.slice(0, 10);
+  if (!isoDate || typeof isoDate !== 'string') return new Date().toISOString().slice(0, 10);
+  try {
+    return isoDate.slice(0, 10);
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 function teamResultCount(match, team, type) {
@@ -532,7 +537,9 @@ export default function EstatisticasTab({
                         className="text-[12px] font-medium text-fc-ink/70 bg-transparent border-none p-0 focus:outline-none"
                       />
                     ) : (
-                      <span className="text-[12px] font-medium text-fc-muted">{new Date(m.date).toLocaleDateString('pt-BR')}</span>
+                      <span className="text-[12px] font-medium text-fc-muted">
+                        {m.date ? new Date(m.date).toLocaleDateString('pt-BR') : 'Data Indefinida'}
+                      </span>
                     )}
                     <button
                       type="button"
