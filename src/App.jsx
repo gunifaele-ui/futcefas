@@ -72,6 +72,11 @@ export default function App() {
   const [teamsDrafted, setTeamsDrafted] = useFirestoreField('teamsDrafted', false);
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
   const [ratingHistory, setRatingHistory] = useFirestoreField('ratingHistory', []);
+  const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
+  const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
+  const [admins, setAdmins] = useFirestoreField('admins', DEFAULT_ADMINS);
+  const [admPrepActive, setAdmPrepActive] = useFirestoreField('admPrepActive', false);
+
   const safePlayers = useMemo(() => (Array.isArray(players) ? players : []), [players]);
   const safeGeneratedTeams = useMemo(() => (Array.isArray(generatedTeams) ? generatedTeams : []), [generatedTeams]);
   const safeMatchHistory = useMemo(() => (Array.isArray(matchHistory) ? matchHistory : []), [matchHistory]);
@@ -119,7 +124,6 @@ export default function App() {
   // menos pra quem tá no modo visualização, até o jogo travar — daí só ADM edita.
   function canEditMatchStats(match) {
     if (isViewer) return false;
-    if (isSimulationMode) return true;
     if (isRealAdmin) return true;
     return !isMatchLocked(match);
   }
