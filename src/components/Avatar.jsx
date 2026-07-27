@@ -17,8 +17,8 @@ export default function Avatar({ nome, foto, size = 'w-9 h-9', textSize = 'text-
 
   if (foto) {
     return (
-      <div className="relative shrink-0">
-        <div className={`${size} rounded-full overflow-hidden ring-1 ${style.ring} shrink-0`}>
+      <div className={`relative shrink-0 ${size}`}>
+        <div className={`w-full h-full rounded-full overflow-hidden ring-1 ${style.ring} shrink-0 flex items-center justify-center`}>
           <img src={foto} alt={nome} className="w-full h-full object-cover" />
         </div>
         <BadgeOverlay badge={badge} />
@@ -27,8 +27,8 @@ export default function Avatar({ nome, foto, size = 'w-9 h-9', textSize = 'text-
   }
 
   return (
-    <div className="relative shrink-0">
-      <div className={`${size} rounded-full ${style.bg} ring-1 ${style.ring} flex items-center justify-center text-fc-ink/70 ${textSize} font-semibold shrink-0`}>
+    <div className={`relative shrink-0 ${size}`}>
+      <div className={`w-full h-full rounded-full ${style.bg} ring-1 ${style.ring} flex items-center justify-center text-fc-ink/70 ${textSize} font-semibold shrink-0`}>
         {getInitials(nome)}
       </div>
       <BadgeOverlay badge={badge} />

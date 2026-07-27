@@ -120,24 +120,36 @@ export default function NotasTab({
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];
-            const topBadge = getTopBadge(badgesByPlayerId?.get(p.id));
+            const playerBadges = (badgesByPlayerId?.get(p.id) || []).filter((b) => b.achieved);
             return (
               <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
                 <button
                   type="button"
                   onClick={() => onOpenProfile(p)}
-                  className="flex items-center gap-2 min-w-0 flex-1 text-left active:opacity-70 transition"
+                  className="flex items-center gap-2 min-w-0 flex-1 text-left active:opacity-70 transition group"
                 >
-                  <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" badge={topBadge} />
-                  <span className="text-[13px] font-medium text-fc-ink break-words min-w-0 flex items-center gap-1">
+                  <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
+
+                  <span className="text-[13px] font-semibold text-fc-ink truncate flex-1 min-w-0 pr-1 flex items-center gap-1">
+                    <span className="truncate">{p.nome}</span>
                     {missing.length > 0 && (
                       <span title={`Falta nota de: ${missing.join(', ')}`} className="shrink-0 text-fc-coraldark">
-                        <Icon name="alertTriangle" size={12} />
+                        <Icon name="alertTriangle" size={11} />
                       </span>
                     )}
-                    {p.nome}
                   </span>
+
+                  {playerBadges.length > 0 && (
+                    <div className="flex items-center gap-1 shrink-0 ml-auto pr-0.5">
+                      {playerBadges.map((badge) => (
+                        <span key={badge.id} title={`${badge.label}: ${badge.description}`} className="text-[13.5px] leading-none shrink-0">
+                          {badge.icon}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </button>
+                <IconButton onClick={() => onOpenProfile(p)} title="Ampliar perfil" icon="user" />
                 {!isGoleiro && (
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
                     {p.notaMedia.toFixed(2)}

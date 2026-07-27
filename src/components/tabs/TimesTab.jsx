@@ -3,6 +3,8 @@ import Avatar from '../Avatar';
 import Icon from '../Icon';
 import ResultChip from '../ResultChip';
 import PlayerStatTrigger from '../PlayerStatTrigger';
+import PresencaTab from './PresencaTab';
+import MatchSummaryDash from '../MatchSummaryDash';
 
 const PIX_KEY = '+5515997228483';
 const PIX_KEY_LABEL = '(15) 99722-8483';
@@ -168,11 +170,31 @@ export default function TimesTab({
   onAddResult,
   onRemoveResult,
   onRequestFinalize,
+  presencaProps,
+  showSummaryDash,
+  summaryMatch,
+  onStartNextFut,
 }) {
   const goleirosPresentes = players.filter((p) => p.statusPresenca && p.posicaoFixa === 'Goleiro');
   const showPixCard = !isAdmin || isViewer;
   const [showDuvidas, setShowDuvidas] = useState(false);
   const totalLinePlayers = generatedTeams.reduce((sum, t) => sum + t.players.length, 0);
+
+  if (showSummaryDash && summaryMatch) {
+    return (
+      <MatchSummaryDash
+        match={summaryMatch}
+        players={players}
+        isAdmin={isAdmin}
+        isViewer={isViewer}
+        onStartNextFut={onStartNextFut}
+      />
+    );
+  }
+
+  if (!teamsDrafted && isAdmin && presencaProps) {
+    return <PresencaTab {...presencaProps} />;
+  }
 
   return (
     <div className="space-y-2.5">
@@ -270,27 +292,13 @@ export default function TimesTab({
         </div>
       )}
 
-      {isRealAdmin && teamsDrafted && (
-        <div className="space-y-2">
-          {currentMatch && !currentMatch.finalizado && (
-            <button
-              onClick={onRequestFinalize}
-              className="w-full bg-fc-surface hover:bg-fc-cream border border-fc-line text-fc-ink font-medium py-3 rounded-xl text-[13px] transition flex items-center justify-center gap-2"
-            >
-              <Icon name="lock" size={15} /> Finalizar jogo
-            </button>
-          )}
+      {isRealAdmin && teamsDrafted && currentMatch && !currentMatch.finalizado && (
+        <div>
           <button
-            onClick={onGoToHistory}
-            className="w-full bg-fc-dark hover:bg-fc-dark2 text-white font-medium py-3 rounded-xl text-[13px] transition flex items-center justify-center gap-2"
+            onClick={onRequestFinalize}
+            className="w-full bg-fc-surface hover:bg-fc-cream border border-fc-line text-fc-ink font-medium py-3 rounded-xl text-[13px] transition flex items-center justify-center gap-2"
           >
-            <Icon name="chart" size={15} /> Ver / editar no histórico
-          </button>
-          <button
-            onClick={onResetTeams}
-            className="w-full bg-fc-surface hover:bg-fc-cream border border-fc-line text-fc-coraldark font-medium py-3 rounded-xl text-[13px] transition flex items-center justify-center gap-2"
-          >
-            <Icon name="refresh" size={15} /> Nova chamada (resetar times)
+            <Icon name="lock" size={15} /> Finalizar jogo
           </button>
         </div>
       )}

@@ -75,6 +75,13 @@ export default function App() {
   const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
   const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
   const [admins, setAdmins] = useFirestoreField('admins', DEFAULT_ADMINS);
+  const [admPrepActive, setAdmPrepActive] = useFirestoreField('admPrepActive', false);
+
+  const handleStartNextFut = () => {
+    setAdmPrepActive(true);
+    triggerAlert('Chamada aberta para montagem dos próximos times!', 'info');
+  };
+
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [adminPendingDelete, setAdminPendingDelete] = useState(null);
   const [matchPendingDelete, setMatchPendingDelete] = useState(null);
@@ -107,6 +114,7 @@ export default function App() {
   // menos pra quem tá no modo visualização, até o jogo travar — daí só ADM edita.
   function canEditMatchStats(match) {
     if (isViewer) return false;
+    if (isSimulationMode) return true;
     if (isRealAdmin) return true;
     return !isMatchLocked(match);
   }
@@ -134,8 +142,8 @@ export default function App() {
   const [profileTargetPlayer, setProfileTargetPlayer] = useState(null);
 
   const badgesByPlayerId = useMemo(
-    () => computeBadgesForPlayers(players, matchHistory, ratingHistory),
-    [players, matchHistory, ratingHistory]
+    () => computeBadgesForPlayers(effectivePlayers, effectiveMatchHistory, effectiveRatingHistory),
+    [effectivePlayers, effectiveMatchHistory, effectiveRatingHistory]
   );
 
   const triggerAlert = (message, type = 'info') => {
@@ -159,7 +167,7 @@ export default function App() {
   };
 
   const logActivity = (message, meta = {}) => {
-    if (!currentAdmin || isViewer) return;
+    if (isSimulationMode || !currentAdmin || isViewer) return;
     const { groupKey, delta, ...restMeta } = meta;
 
     // Se essa ação anula uma ação recente e oposta do mesmo ADM (ex: tirou o time e resetou
@@ -521,6 +529,7 @@ export default function App() {
 
     setGeneratedTeams(teams);
     setTeamsDrafted(true);
+    setAdmPrepActive(false);
     setMatchHistory([historyRecord, ...matchHistory]);
     setLastDraftEvent({ id: historyRecord.id, adminKey: currentAdmin, timestamp: Date.now() });
     triggerAlert('Time tirado com sucesso!', 'success');
@@ -532,9 +541,10 @@ export default function App() {
     if (isViewer) return;
     setTeamsDrafted(false);
     setGeneratedTeams([]);
+    setAdmPrepActive(true);
     triggerAlert('Chamada liberada!', 'info');
     logActivity('resetou os times (nova chamada)', { groupKey: 'teams-draft', delta: -1 });
-    setActiveTab('presenca');
+    setActiveTab('times');
   };
 
   const handleUpdateMatchDate = (matchId, newDate) => {
@@ -547,6 +557,9 @@ export default function App() {
     if (!isRealAdmin) return;
     setMatchHistory(matchHistory.map((m) => (m.id === matchId ? { ...m, finalizado: true, finalizadoEm: new Date().toISOString() } : m)));
     setMatchPendingFinalize(null);
+    setTeamsDrafted(false);
+    setGeneratedTeams([]);
+    setAdmPrepActive(false);
     triggerAlert('Jogo finalizado! Só ADMs podem editar esse jogo agora.', 'success');
     logActivity('finalizou o jogo atual');
   };
@@ -650,11 +663,23 @@ export default function App() {
   const handleDeleteMatch = (matchId) => {
     if (!isAdmin || isViewer) return;
     const snapshot = matchHistory;
+    const isCurrent = matchHistory[0]?.id === matchId;
     setMatchHistory(matchHistory.filter((m) => m.id !== matchId));
+    if (isCurrent && teamsDrafted) {
+      setTeamsDrafted(false);
+      setGeneratedTeams([]);
+    }
     setMatchPendingDelete(null);
     logActivity('excluiu um sorteio do histórico');
     scheduleUndo('Sorteio excluído do histórico', () => {
       setMatchHistory(snapshot);
+      if (isCurrent) {
+        const match = snapshot.find((m) => m.id === matchId);
+        if (match && match.teams) {
+          setGeneratedTeams(match.teams);
+          setTeamsDrafted(true);
+        }
+      }
       logActivity('desfez a exclusão de um sorteio');
     });
   };
@@ -736,15 +761,15 @@ export default function App() {
     setPlayers(players.map((p) => (p.id === playerId ? { ...p, posicaoFixa: targetPos } : p)));
   };
 
-  const linePlayersList = useMemo(() => players.filter((p) => p.posicaoFixa === 'Linha'), [players]);
-  const goalkeepersList = useMemo(() => players.filter((p) => p.posicaoFixa === 'Goleiro'), [players]);
+  const linePlayersList = useMemo(() => effectivePlayers.filter((p) => p.posicaoFixa === 'Linha'), [effectivePlayers]);
+  const goalkeepersList = useMemo(() => effectivePlayers.filter((p) => p.posicaoFixa === 'Goleiro'), [effectivePlayers]);
   const allLinePresent = linePlayersList.length > 0 && linePlayersList.every((p) => p.statusPresenca);
   const allGoalkeepersPresent = goalkeepersList.length > 0 && goalkeepersList.every((p) => p.statusPresenca);
 
   const filteredSearchList = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    return players.filter((p) => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [players, searchQuery]);
+    return effectivePlayers.filter((p) => p.nome.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [effectivePlayers, searchQuery]);
 
   return (
     <div className="min-h-dvh bg-fc-cream text-fc-ink flex flex-col font-sans select-none pb-24 md:pb-8 relative overflow-x-hidden" style={bgTextureStyle}>
@@ -782,30 +807,63 @@ export default function App() {
           <Skeleton />
         ) : (
           <>
-        {activeTab === 'times' && (
-          <TimesTab
-            players={players}
-            generatedTeams={generatedTeams}
-            teamsDrafted={teamsDrafted}
-            currentMatch={teamsDrafted ? matchHistory[0] : null}
-            isAdmin={isAdmin}
-            isViewer={isViewer}
-            isRealAdmin={isRealAdmin}
-            canEditStats={canEditMatchStats(teamsDrafted ? matchHistory[0] : null)}
-            matchLocked={isMatchLocked(teamsDrafted ? matchHistory[0] : null)}
-            copied={copied}
-            onCopyTeams={handleCopyTeamsText}
-            onResetTeams={handleResetTeams}
-            onGoToHistory={() => setActiveTab('estatisticas')}
-            onAddGoal={handleAddGoal}
-            onRemoveGoal={handleRemoveGoal}
-            onAddAssist={handleAddAssist}
-            onRemoveAssist={handleRemoveAssist}
-            onAddResult={handleAddResult}
-            onRemoveResult={handleRemoveResult}
-            onRequestFinalize={() => matchHistory[0] && setMatchPendingFinalize(matchHistory[0].id)}
-          />
-        )}
+        {activeTab === 'times' && (() => {
+          const latestMatch = matchHistory[0];
+          const isLatestMatchFinalized = latestMatch?.finalizado === true;
+          const shouldShowSummaryDash =
+            !teamsDrafted &&
+            isLatestMatchFinalized &&
+            !(isAdmin && !isViewer && admPrepActive);
+
+          return (
+            <TimesTab
+              players={players}
+              generatedTeams={generatedTeams}
+              teamsDrafted={teamsDrafted}
+              currentMatch={teamsDrafted ? matchHistory[0] : null}
+              isAdmin={isAdmin}
+              isViewer={isViewer}
+              isRealAdmin={isRealAdmin}
+              canEditStats={canEditMatchStats(teamsDrafted ? matchHistory[0] : null)}
+              matchLocked={isMatchLocked(teamsDrafted ? matchHistory[0] : null)}
+              copied={copied}
+              showSummaryDash={shouldShowSummaryDash}
+              summaryMatch={latestMatch}
+              onStartNextFut={handleStartNextFut}
+              onCopyTeams={handleCopyTeamsText}
+              onResetTeams={handleResetTeams}
+              onGoToHistory={() => setActiveTab('estatisticas')}
+              onAddGoal={handleAddGoal}
+              onRemoveGoal={handleRemoveGoal}
+              onAddAssist={handleAddAssist}
+              onRemoveAssist={handleRemoveAssist}
+              onAddResult={handleAddResult}
+              onRemoveResult={handleRemoveResult}
+              onRequestFinalize={() => matchHistory[0] && setMatchPendingFinalize(matchHistory[0].id)}
+              presencaProps={{
+                players,
+                isViewer,
+                linePlayersList,
+                goalkeepersList,
+                badgesByPlayerId,
+                requiredCount: MIN_JOGADORES_LINHA,
+                allLinePresent,
+                allGoalkeepersPresent,
+                onTogglePresence: handleTogglePresence,
+                onToggleTipo: handleToggleTipo,
+                onToggleAllLine: () => handleToggleAllInPosition('Linha', !allLinePresent),
+                onToggleAllGoalkeepers: () => handleToggleAllInPosition('Goleiro', !allGoalkeepersPresent),
+                onDragStart: handleDragStart,
+                onDragOver: handleDragOver,
+                onDrop: handleDrop,
+                onOpenSearch: () => setShowSearchModal(true),
+                onOpenAddAvulso: () => setShowAddAvulsoModal(true),
+                onOpenImport: () => setShowImportModal(true),
+                onDraftTeams: handleDraftTeams,
+              }}
+            />
+          );
+        })()}
 
         {activeTab === 'jogadores' && (
           <JogadoresTab
@@ -813,30 +871,6 @@ export default function App() {
             matchHistory={matchHistory}
             badgesByPlayerId={badgesByPlayerId}
             onOpenProfile={setProfileTargetPlayer}
-          />
-        )}
-
-        {activeTab === 'presenca' && isAdmin && (
-          <PresencaTab
-            players={players}
-            isViewer={isViewer}
-            linePlayersList={linePlayersList}
-            goalkeepersList={goalkeepersList}
-            badgesByPlayerId={badgesByPlayerId}
-            requiredCount={MIN_JOGADORES_LINHA}
-            allLinePresent={allLinePresent}
-            allGoalkeepersPresent={allGoalkeepersPresent}
-            onTogglePresence={handleTogglePresence}
-            onToggleTipo={handleToggleTipo}
-            onToggleAllLine={() => handleToggleAllInPosition('Linha', !allLinePresent)}
-            onToggleAllGoalkeepers={() => handleToggleAllInPosition('Goleiro', !allGoalkeepersPresent)}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onOpenSearch={() => setShowSearchModal(true)}
-            onOpenAddAvulso={() => setShowAddAvulsoModal(true)}
-            onOpenImport={() => setShowImportModal(true)}
-            onDraftTeams={handleDraftTeams}
           />
         )}
 
@@ -895,6 +929,7 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           filteredList={filteredSearchList}
+          badgesByPlayerId={badgesByPlayerId}
           onSelectPlayer={(id) => { handleTogglePresence(id); setShowSearchModal(false); setSearchQuery(''); }}
           onClose={() => { setShowSearchModal(false); setSearchQuery(''); }}
         />
@@ -911,7 +946,7 @@ export default function App() {
 
       {showImportModal && (
         <ImportAttendanceModal
-          players={players}
+          players={effectivePlayers}
           onApply={handleApplyImport}
           onClose={() => setShowImportModal(false)}
         />
@@ -986,7 +1021,7 @@ export default function App() {
         <PlayerProfileModal
           player={profileTargetPlayer}
           badges={badgesByPlayerId.get(profileTargetPlayer.id) || []}
-          matchHistory={matchHistory}
+          matchHistory={effectiveMatchHistory}
           onClose={() => setProfileTargetPlayer(null)}
         />
       )}

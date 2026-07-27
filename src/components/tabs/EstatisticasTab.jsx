@@ -4,6 +4,7 @@ import ResultChip from '../ResultChip';
 import PlayerSpotlightCard from '../PlayerSpotlightCard';
 import PlayerStatTrigger from '../PlayerStatTrigger';
 import BottomSheet from '../BottomSheet';
+import MatchSummaryDash from '../MatchSummaryDash';
 
 const TOP_LIST_LIMIT = 10;
 
@@ -231,6 +232,7 @@ export default function EstatisticasTab({
   const canEdit = isAdmin && !isViewer;
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [leaderModalKey, setLeaderModalKey] = useState(null);
+  const [selectedSummaryMatch, setSelectedSummaryMatch] = useState(null);
   const visibleMatches = matchHistory.slice(0, visibleCount);
 
   const golRanking = useMemo(() => {
@@ -521,16 +523,25 @@ export default function EstatisticasTab({
               return (
               <div key={m.id} className={`border border-fc-line rounded-xl p-3 ${isTrailingOdd ? 'lg:col-span-2' : ''}`}>
                 <div className="flex justify-between items-center mb-2.5 gap-2">
-                  {canEdit ? (
-                    <input
-                      type="date"
-                      value={toDateInputValue(m.date)}
-                      onChange={(e) => onUpdateDate(m.id, e.target.value)}
-                      className="text-[12px] font-medium text-fc-ink/70 bg-transparent border-none p-0 focus:outline-none"
-                    />
-                  ) : (
-                    <span className="text-[12px] font-medium text-fc-muted">{new Date(m.date).toLocaleDateString('pt-BR')}</span>
-                  )}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {canEdit ? (
+                      <input
+                        type="date"
+                        value={toDateInputValue(m.date)}
+                        onChange={(e) => onUpdateDate(m.id, e.target.value)}
+                        className="text-[12px] font-medium text-fc-ink/70 bg-transparent border-none p-0 focus:outline-none"
+                      />
+                    ) : (
+                      <span className="text-[12px] font-medium text-fc-muted">{new Date(m.date).toLocaleDateString('pt-BR')}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSummaryMatch(m)}
+                      className="text-[11px] font-semibold text-fc-dark hover:text-fc-dark2 bg-fc-limesoft border border-fc-lime/40 px-2 py-0.5 rounded-full flex items-center gap-1 transition active:scale-95 shrink-0"
+                    >
+                      📊 Ver Resumo
+                    </button>
+                  </div>
                   {canEdit && (
                     <button
                       onClick={() => onRequestDeleteMatch(m.id)}
@@ -623,6 +634,17 @@ export default function EstatisticasTab({
       </div>
 
       {leaderModalKey && <LeaderModal {...leaderModals[leaderModalKey]} onClose={() => setLeaderModalKey(null)} />}
+
+      {selectedSummaryMatch && (
+        <BottomSheet onClose={() => setSelectedSummaryMatch(null)}>
+          <MatchSummaryDash
+            match={selectedSummaryMatch}
+            players={players}
+            isModal
+            onClose={() => setSelectedSummaryMatch(null)}
+          />
+        </BottomSheet>
+      )}
     </div>
   );
 }

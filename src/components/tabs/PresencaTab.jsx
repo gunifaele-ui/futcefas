@@ -50,8 +50,18 @@ function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColo
           <Icon name="check" size={9} strokeWidth={3} />
         </span>
       )}
-      <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" badge={badge} />
-      <span className="text-[11px] leading-tight font-medium break-words hyphens-auto block w-full mt-0.5">{p.nome}</span>
+      <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
+      <span className="text-[11px] leading-tight font-medium block w-full mt-0.5 flex items-center justify-center gap-1.5 min-w-0">
+        <span className="truncate">{p.nome}</span>
+        {badge && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="w-px h-3 bg-fc-line/60 shrink-0" />
+            <span title={badge.label} className="text-[12px] leading-none shrink-0">
+              {badge.icon}
+            </span>
+          </div>
+        )}
+      </span>
       <span className={`text-[9px] font-normal block ${subLabelColor}`}>{subLabel}</span>
     </div>
   );

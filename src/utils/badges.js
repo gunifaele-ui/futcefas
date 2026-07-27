@@ -498,20 +498,23 @@ function bestPartnerFor(playerId, matchHistory) {
   return best;
 }
 
-export function computeProfileStats(playerId, matchHistory) {
+export function computeProfileStats(playerId, matchHistory, isGoleiro = false) {
   const statsById = buildPlayerMatchStats(matchHistory);
   const entry = statsById.get(playerId);
   const matches = entry?.matches || [];
 
+  const vitorias = matches.filter((m) => m.vitoria).length;
+  const presencas = matches.length;
   const totals = {
     gols: matches.reduce((sum, m) => sum + m.gols, 0),
     assistencias: matches.reduce((sum, m) => sum + m.assistencias, 0),
-    presencas: matches.length,
-    vitorias: matches.filter((m) => m.vitoria).length,
+    presencas,
+    vitorias,
+    pctVitorias: presencas > 0 ? Math.round((vitorias / presencas) * 100) : 0,
   };
 
   const maxGolsMatch = matches.length ? Math.max(0, ...matches.map((m) => m.gols)) : 0;
-  const maxDrySpell = maxRunLength(matches.map((m) => m.gols === 0));
+  const maxDrySpell = isGoleiro ? 0 : maxRunLength(matches.map((m) => m.gols === 0));
 
   const matchHistoryAsc = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
   const presenceSeq = matchHistoryAsc.map((m) => m.teams.some((t) => t.players.some((p) => p.id === playerId)));

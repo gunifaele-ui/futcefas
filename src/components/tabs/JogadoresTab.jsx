@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import Avatar from '../Avatar';
+import Icon from '../Icon';
 import { getTopBadge, computeCareerTotals } from '../../utils/badges';
 
 const SORT_OPTIONS = [
@@ -45,42 +46,44 @@ export default function JogadoresTab({ players, matchHistory, badgesByPlayerId, 
 
       <div className="space-y-1.5">
         {sortedList.map(({ player: p, totals }) => {
-          const topBadge = getTopBadge(badgesByPlayerId?.get(p.id));
+          const playerBadges = (badgesByPlayerId?.get(p.id) || []).filter((b) => b.achieved);
           return (
             <button
               key={p.id}
               type="button"
               onClick={() => onOpenProfile(p)}
-              className="w-full bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line active:scale-[0.99] transition text-left"
+              className="w-full bg-fc-surface hover:bg-fc-cream/60 rounded-xl px-3 py-2 flex items-center gap-2 border border-fc-line active:scale-[0.99] transition text-left group"
             >
               <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
-              <span className="text-[13px] font-medium text-fc-ink break-words min-w-0 flex-1 flex items-center gap-1.5">
-                {topBadge && (
-                  <span title={topBadge.label} className="text-[14px] leading-none shrink-0">
-                    {topBadge.icon}
-                  </span>
-                )}
+
+              <span className="text-[13px] font-semibold text-fc-ink truncate flex-1 min-w-0 pr-2">
                 {p.nome}
               </span>
-              {sortMode !== 'nome' && (
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 bg-fc-cream text-fc-ink/70">
-                  {totals[sortMode]}
+
+              <div className="flex items-center gap-2 shrink-0 ml-auto">
+                {playerBadges.length > 0 && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    {playerBadges.map((badge) => (
+                      <span key={badge.id} title={`${badge.label}: ${badge.description}`} className="text-[14.5px] leading-none shrink-0">
+                        {badge.icon}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {sortMode !== 'nome' && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-fc-cream text-fc-ink/80 border border-fc-line/40">
+                    {totals[sortMode]}
+                  </span>
+                )}
+
+                <span
+                  title="Ampliar perfil"
+                  className="text-[11px] font-semibold text-fc-ink/80 bg-fc-cream group-hover:bg-fc-limesoft px-2.5 py-1 rounded-lg border border-fc-line transition flex items-center gap-1 shrink-0"
+                >
+                  <Icon name="user" size={12} /> Ver perfil
                 </span>
-              )}
-              <svg
-                viewBox="0 0 24 24"
-                className="w-4 h-4 shrink-0 text-fc-ink/30"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M15 3h6v6" />
-                <path d="M9 21H3v-6" />
-                <path d="M21 3l-7 7" />
-                <path d="M3 21l7-7" />
-              </svg>
+              </div>
             </button>
           );
         })}
