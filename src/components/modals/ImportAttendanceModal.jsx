@@ -16,6 +16,8 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
   const handleResolutionChange = (idx, value) => {
     if (value === '__avulso__') {
       setResolutions((r) => ({ ...r, [idx]: { action: 'avulso' } }));
+    } else if (value === '__goleiro__') {
+      setResolutions((r) => ({ ...r, [idx]: { action: 'goleiro' } }));
     } else if (value === '__ignore__' || value === '') {
       setResolutions((r) => ({ ...r, [idx]: { action: 'ignore' } }));
     } else {
@@ -26,27 +28,30 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
   const handleApply = () => {
     const matchedUpdates = parsed.matched.map((m) => ({ playerId: m.player.id, present: m.present }));
     const avulsosToAdd = [...parsed.avulsosToCreate];
+    const goleirosToAdd = [...parsed.goleirosToCreate];
 
     parsed.unmatched.forEach((u, idx) => {
       const resolution = resolutions[idx];
       if (!resolution || resolution.action === 'ignore') return;
       if (resolution.action === 'avulso') {
         avulsosToAdd.push({ nome: u.name, present: u.present });
+      } else if (resolution.action === 'goleiro') {
+        goleirosToAdd.push({ nome: u.name, present: u.present });
       } else if (resolution.action === 'match' && resolution.playerId) {
         matchedUpdates.push({ playerId: resolution.playerId, present: u.present });
       }
     });
 
-    onApply(matchedUpdates, avulsosToAdd);
+    onApply(matchedUpdates, avulsosToAdd, goleirosToAdd);
   };
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
-        <Icon name="clipboard" size={16} className="text-fc-dark/60" /> Colar lista do WhatsApp
+      <h3 className="text-[15px] font-semibold text-fc-ink mb-1 flex items-center gap-2">
+        <Icon name="clipboard" size={16} className="text-fc-ink/60" /> Colar lista do WhatsApp
       </h3>
       <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
-        Cole a lista com ✅ pra quem vai e ❌ pra quem não vai. Se tiver uma linha "Avulsos", os nomes depois dela viram avulsos automaticamente.
+        Cole a lista com ✅ pra quem vai. ❌ ou quem não respondeu nada conta como "não vai". Se tiver uma linha "Avulsos", os nomes depois dela viram avulsos automaticamente. Se tiver uma linha "Goleiros", os nomes depois dela viram goleiros automaticamente.
       </p>
 
       {!parsed && (
@@ -56,14 +61,14 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
             onChange={(e) => setText(e.target.value)}
             rows={10}
             placeholder={'Chicon ✅\nMiguel ✅\nJoãozinho ❌\n\nAvulsos\nFulano ✅'}
-            className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition resize-none"
+            className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition resize-none"
             autoFocus
           />
           <div className="flex gap-2 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
             >
               Cancelar
             </button>
@@ -81,14 +86,18 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
 
       {parsed && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-fc-limesoft rounded-xl py-2.5">
-              <span className="block text-[18px] font-semibold text-fc-dark">{parsed.matched.length}</span>
-              <span className="text-[11px] text-fc-dark/60">Reconhecidos</span>
+              <span className="block text-[18px] font-semibold text-fc-ink">{parsed.matched.length}</span>
+              <span className="text-[11px] text-fc-ink/60">Reconhecidos</span>
             </div>
             <div className="bg-fc-cream border border-fc-line rounded-xl py-2.5">
               <span className="block text-[18px] font-semibold text-fc-coraldark">{parsed.avulsosToCreate.length}</span>
               <span className="text-[11px] text-fc-muted">Avulsos novos</span>
+            </div>
+            <div className="bg-fc-cream border border-fc-line rounded-xl py-2.5">
+              <span className="block text-[18px] font-semibold text-fc-coraldark">{parsed.goleirosToCreate.length}</span>
+              <span className="text-[11px] text-fc-muted">Goleiros novos</span>
             </div>
           </div>
 
@@ -99,9 +108,9 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
               </span>
               {parsed.unmatched.map((u, idx) => (
                 <div key={idx} className="bg-fc-cream border border-fc-line rounded-xl p-2.5">
-                  <p className="text-[13px] font-medium text-fc-dark mb-1.5 break-words">"{u.name}"</p>
+                  <p className="text-[13px] font-medium text-fc-ink mb-1.5 break-words">"{u.name}"</p>
                   <select
-                    className="w-full bg-white border border-fc-line rounded-lg py-2 px-2.5 text-[12px] font-medium text-fc-dark/80 focus:outline-none focus:border-fc-dark/30"
+                    className="w-full bg-fc-surface border border-fc-line rounded-lg py-2 px-2.5 text-[12px] font-medium text-fc-ink/80 focus:outline-none focus:border-fc-ink/30"
                     defaultValue=""
                     onChange={(e) => handleResolutionChange(idx, e.target.value)}
                   >
@@ -109,6 +118,7 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
                       Selecione uma opção...
                     </option>
                     <option value="__avulso__">Criar como avulso novo</option>
+                    <option value="__goleiro__">Criar como goleiro novo</option>
                     <option value="__ignore__">Ignorar essa linha</option>
                     {players.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -121,7 +131,7 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
             </div>
           )}
 
-          {parsed.matched.length === 0 && parsed.avulsosToCreate.length === 0 && parsed.unmatched.length === 0 && (
+          {parsed.matched.length === 0 && parsed.avulsosToCreate.length === 0 && parsed.goleirosToCreate.length === 0 && parsed.unmatched.length === 0 && (
             <p className="text-[12px] text-fc-muted text-center py-4">Nenhuma linha reconhecida. Confira se usou ✅ ou ❌ nas linhas.</p>
           )}
 
@@ -129,7 +139,7 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
             <button
               type="button"
               onClick={() => setParsed(null)}
-              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+              className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
             >
               Voltar
             </button>

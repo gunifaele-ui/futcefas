@@ -14,7 +14,7 @@ export default function GamePhoto({ nome, fotoJogo, className = '' }) {
 
   return (
     <div className={`w-full h-full bg-gradient-to-b from-fc-line to-fc-cream flex items-end justify-center overflow-hidden ${className}`}>
-      <Silhouette className="w-[65%] text-fc-dark/15" />
+      <Silhouette className="w-[65%] text-fc-ink/15" />
     </div>
   );
 }

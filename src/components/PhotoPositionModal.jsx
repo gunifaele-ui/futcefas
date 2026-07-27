@@ -64,8 +64,8 @@ export default function PhotoPositionModal({ src, naturalWidth, naturalHeight, a
 
   return (
     <BottomSheet onClose={onCancel}>
-      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
-        <Icon name="image" size={16} className="text-fc-dark/60" /> Posicionar foto
+      <h3 className="text-[15px] font-semibold text-fc-ink mb-1 flex items-center gap-2">
+        <Icon name="image" size={16} className="text-fc-ink/60" /> Posicionar foto
       </h3>
       <p className="text-[12px] text-fc-muted mb-4">Arraste para centralizar e use o zoom para ajustar o enquadramento.</p>
 
@@ -119,7 +119,7 @@ export default function PhotoPositionModal({ src, naturalWidth, naturalHeight, a
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+          className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
         >
           Cancelar
         </button>

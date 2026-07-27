@@ -2,12 +2,16 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { JOGADORES_LINHA_INICIAIS, GOLEIROS_INICIAIS } from './data/initialPlayers';
 import { useFirestoreField } from './hooks/useFirestoreField';
 import Toast from './components/Toast';
+import UndoToast from './components/UndoToast';
+import Skeleton from './components/Skeleton';
 import DraftNotification from './components/DraftNotification';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
+import SideNav from './components/SideNav';
 import TimesTab from './components/tabs/TimesTab';
 import PresencaTab from './components/tabs/PresencaTab';
 import NotasTab from './components/tabs/NotasTab';
+import JogadoresTab from './components/tabs/JogadoresTab';
 import AdminModal from './components/modals/AdminModal';
 import SearchModal from './components/modals/SearchModal';
 import AddAvulsoModal from './components/modals/AddAvulsoModal';
@@ -18,24 +22,30 @@ import EditPlayerModal from './components/modals/EditPlayerModal';
 import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal';
 import ActivityLogModal from './components/modals/ActivityLogModal';
 import SettingsModal from './components/modals/SettingsModal';
+import ConfirmActionModal from './components/modals/ConfirmActionModal';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
+import PlayerProfileModal from './components/modals/PlayerProfileModal';
 import { activeRaters, ratingFieldFor, computeNotaMedia, slugifyAdminKey } from './utils/ratings';
 import { VIEWER_KEY } from './utils/adminLabels';
+import { sha256Hex } from './utils/hash';
+import { draftBalancedTeams, orderTeamsByStrength } from './utils/draft';
+import { computeBadgesForPlayers } from './utils/badges';
 
 const MIN_JOGADORES_LINHA = 15;
 const LIMIAR_QUATRO_TIMES = 15;
+// Hashes SHA-256 das senhas padrão ('gustavo', 'enzo', 'miguel'), nunca a senha em texto puro.
 const DEFAULT_ADMINS = [
-  { key: 'gustavo', label: 'Gustavo', password: 'gustavo', hidden: false },
-  { key: 'enzo', label: 'Enzo', password: 'enzo', hidden: false },
-  { key: 'miguel', label: 'Miguel', password: 'miguel', hidden: false },
+  { key: 'gustavo', label: 'Gustavo', passwordHash: '67daae98ed0c612857a716202f463356ffcf1a018ce140ab4a4bebc8eb274e6d', hidden: false },
+  { key: 'enzo', label: 'Enzo', passwordHash: '605306b83fe54de0ab9373e98b9fd30d0a44da6e57487f19621d9275cff74b2f', hidden: false },
+  { key: 'miguel', label: 'Miguel', passwordHash: '5ef68465886fa04d3e0bbe86b59d964dd98e5775e95717df978d8bedee6ff16c', hidden: false },
 ];
-const DRAFT_JITTER = 0.6;
-const DRAFT_CANDIDATES = 60;
-const REPEAT_MATCH_WEIGHTS = [3, 1]; // peso do jogo anterior, depois do jogo anterior a esse
 const MAX_ACTIVITY_LOG = 150;
 const LAST_SEEN_ACTIVITY_KEY = 'fc_last_seen_activity_ts';
 const ACTIVITY_WINDOW_MS = 12 * 60 * 60 * 1000;
+const ACTIVITY_CANCEL_WINDOW_MS = 60 * 1000;
 const ADMIN_SESSION_KEY = 'fc_admin_session';
+const MATCH_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const UNDO_WINDOW_MS = 6000;
 
 function readStoredSession() {
   try {
@@ -56,106 +66,12 @@ const bgTextureStyle = {
   backgroundSize: '20px 20px',
 };
 
-function pairKey(idA, idB) {
-  return idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
-}
-
-function buildPairWeights(matchHistory) {
-  const weights = new Map();
-  matchHistory.slice(0, REPEAT_MATCH_WEIGHTS.length).forEach((match, idx) => {
-    const weight = REPEAT_MATCH_WEIGHTS[idx];
-    match.teams.forEach((team) => {
-      const ids = team.players.map((p) => p.id);
-      for (let i = 0; i < ids.length; i++) {
-        for (let j = i + 1; j < ids.length; j++) {
-          const key = pairKey(ids[i], ids[j]);
-          weights.set(key, (weights.get(key) || 0) + weight);
-        }
-      }
-    });
-  });
-  return weights;
-}
-
-function draftOnce(linePresent, numTimes) {
-  const withJitter = linePresent.map((p) => ({ player: p, key: p.notaMedia + (Math.random() - 0.5) * DRAFT_JITTER }));
-  withJitter.sort((a, b) => b.key - a.key);
-  const sorted = withJitter.map((w) => w.player);
-
-  const teams = Array.from({ length: numTimes }, (_, i) => ({
-    id: `t${i + 1}`,
-    name: `Time ${i + 1}`,
-    players: [],
-    ratingSum: 0,
-  }));
-
-  let ascending = true;
-  let teamIdx = 0;
-
-  for (let i = 0; i < sorted.length; i++) {
-    const player = sorted[i];
-    teams[teamIdx].players.push(player);
-    teams[teamIdx].ratingSum += player.notaMedia;
-
-    if (ascending) {
-      if (teamIdx === numTimes - 1) ascending = false;
-      else teamIdx++;
-    } else {
-      if (teamIdx === 0) ascending = true;
-      else teamIdx--;
-    }
-  }
-
-  return teams;
-}
-
-function scoreDraft(teams, pairWeights) {
-  let repeatCost = 0;
-  teams.forEach((team) => {
-    const ids = team.players.map((p) => p.id);
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = i + 1; j < ids.length; j++) {
-        repeatCost += pairWeights.get(pairKey(ids[i], ids[j])) || 0;
-      }
-    }
-  });
-
-  const avgRatings = teams.map((t) => t.ratingSum / t.players.length);
-  const mean = avgRatings.reduce((a, b) => a + b, 0) / avgRatings.length;
-  const balanceCost = avgRatings.reduce((sum, r) => sum + (r - mean) ** 2, 0);
-
-  // Repeat pairings pesam muito mais que o desbalanço residual, já que o
-  // próprio draftOnce já mantém os times parelhos por nível em qualquer ordem.
-  return repeatCost * 1000 + balanceCost;
-}
-
-function orderTeamsByStrength(teams) {
-  const sorted = [...teams].sort((a, b) => a.ratingSum / a.players.length - b.ratingSum / b.players.length);
-  return sorted.map((t, i) => ({ ...t, id: `t${i + 1}`, name: `Time ${i + 1}` }));
-}
-
-function draftBalancedTeams(linePresent, numTimes, matchHistory) {
-  const pairWeights = buildPairWeights(matchHistory);
-  let bestTeams = null;
-  let bestScore = Infinity;
-
-  for (let i = 0; i < DRAFT_CANDIDATES; i++) {
-    const candidate = draftOnce(linePresent, numTimes);
-    const score = scoreDraft(candidate, pairWeights);
-    if (score < bestScore) {
-      bestScore = score;
-      bestTeams = candidate;
-    }
-  }
-
-  return bestTeams;
-}
-
 export default function App() {
-  const [players, setPlayers] = useFirestoreField('players', [...JOGADORES_LINHA_INICIAIS, ...GOLEIROS_INICIAIS]);
+  const [players, setPlayers, isLoadingData] = useFirestoreField('players', [...JOGADORES_LINHA_INICIAIS, ...GOLEIROS_INICIAIS]);
   const [generatedTeams, setGeneratedTeams] = useFirestoreField('generatedTeams', []);
   const [teamsDrafted, setTeamsDrafted] = useFirestoreField('teamsDrafted', false);
   const [matchHistory, setMatchHistory] = useFirestoreField('matchHistory', []);
+  const [ratingHistory, setRatingHistory] = useFirestoreField('ratingHistory', []);
   const [lastDraftEvent, setLastDraftEvent] = useFirestoreField('lastDraftEvent', null);
   const [activityLog, setActivityLog] = useFirestoreField('activityLog', []);
   const [admins, setAdmins] = useFirestoreField('admins', DEFAULT_ADMINS);
@@ -176,6 +92,24 @@ export default function App() {
   const [currentAdmin, setCurrentAdmin] = useState(() => readStoredSession()?.key ?? null);
   const isAdmin = currentAdmin !== null;
   const isViewer = currentAdmin === VIEWER_KEY;
+  const isRealAdmin = isAdmin && !isViewer;
+  const [matchPendingFinalize, setMatchPendingFinalize] = useState(null);
+
+  // Um jogo fica travado pra quem não é ADM assim que um ADM finaliza manualmente,
+  // ou automaticamente depois de 1 dia da hora em que o time foi tirado.
+  function isMatchLocked(match) {
+    if (!match) return false;
+    if (match.finalizado) return true;
+    return Date.now() - new Date(match.date).getTime() > MATCH_EDIT_WINDOW_MS;
+  }
+
+  // Gols, assistências e vitórias ficam livres pra qualquer um marcar (ADM ou não),
+  // menos pra quem tá no modo visualização, até o jogo travar — daí só ADM edita.
+  function canEditMatchStats(match) {
+    if (isViewer) return false;
+    if (isRealAdmin) return true;
+    return !isMatchLocked(match);
+  }
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [adminError, setAdminError] = useState('');
@@ -195,6 +129,14 @@ export default function App() {
   const [editPlayerTarget, setEditPlayerTarget] = useState(null);
   const [systemAlert, setSystemAlert] = useState({ show: false, message: '', type: 'info' });
   const [copied, setCopied] = useState(false);
+  const [undoState, setUndoState] = useState(null);
+  const undoTimerRef = useRef(null);
+  const [profileTargetPlayer, setProfileTargetPlayer] = useState(null);
+
+  const badgesByPlayerId = useMemo(
+    () => computeBadgesForPlayers(players, matchHistory, ratingHistory),
+    [players, matchHistory, ratingHistory]
+  );
 
   const triggerAlert = (message, type = 'info') => {
     setSystemAlert({ show: true, message, type });
@@ -203,9 +145,46 @@ export default function App() {
     }, 3000);
   };
 
+  const scheduleUndo = (message, undo) => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoState({ message, undo });
+    undoTimerRef.current = setTimeout(() => setUndoState(null), UNDO_WINDOW_MS);
+  };
+
+  const handleUndo = () => {
+    if (!undoState) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoState.undo();
+    setUndoState(null);
+  };
+
   const logActivity = (message, meta = {}) => {
     if (!currentAdmin || isViewer) return;
-    const entry = { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, adminKey: currentAdmin, message, timestamp: Date.now(), ...meta };
+    const { groupKey, delta, ...restMeta } = meta;
+
+    // Se essa ação anula uma ação recente e oposta do mesmo ADM (ex: tirou o time e resetou
+    // em seguida, marcou um gol e removeu logo depois), descarta as duas em vez de notificar.
+    if (groupKey && delta) {
+      const now = Date.now();
+      const recentMatches = activityLog.filter(
+        (entry) => entry.groupKey === groupKey && entry.adminKey === currentAdmin && now - entry.timestamp <= ACTIVITY_CANCEL_WINDOW_MS
+      );
+      const pendingDelta = recentMatches.reduce((sum, entry) => sum + (entry.delta || 0), 0) + delta;
+      if (pendingDelta === 0 && recentMatches.length > 0) {
+        const recentIds = new Set(recentMatches.map((entry) => entry.id));
+        setActivityLog(activityLog.filter((entry) => !recentIds.has(entry.id)));
+        return;
+      }
+    }
+
+    const entry = {
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      adminKey: currentAdmin,
+      message,
+      timestamp: Date.now(),
+      ...(groupKey ? { groupKey, delta } : {}),
+      ...restMeta,
+    };
     setActivityLog([entry, ...activityLog].slice(0, MAX_ACTIVITY_LOG));
   };
 
@@ -221,7 +200,7 @@ export default function App() {
     if (!session) return;
     if (session.key === VIEWER_KEY) return;
     const admin = admins.find((a) => a.key === session.key);
-    if (admin && admin.password === session.password) {
+    if (admin && admin.passwordHash === session.passwordHash) {
       if (currentAdmin !== admin.key) setCurrentAdmin(admin.key);
     } else {
       writeStoredSession(null);
@@ -271,13 +250,14 @@ export default function App() {
     }
   };
 
-  const handleAdminAuth = (e) => {
+  const handleAdminAuth = async (e) => {
     e.preventDefault();
     const key = passwordInput.trim().toLowerCase();
-    const match = admins.find((a) => a.password.trim().toLowerCase() === key);
+    const hash = key ? await sha256Hex(key) : null;
+    const match = hash ? admins.find((a) => a.passwordHash === hash) : null;
     if (match) {
       setCurrentAdmin(match.key);
-      writeStoredSession({ key: match.key, password: match.password });
+      writeStoredSession({ key: match.key, passwordHash: match.passwordHash });
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
@@ -301,11 +281,12 @@ export default function App() {
     return ratings;
   };
 
-  const handleAddAdmin = (label, password) => {
+  const handleAddAdmin = async (label, password) => {
     const key = slugifyAdminKey(label);
     if (!key) return { error: 'Nome inválido.' };
     if (admins.some((a) => a.key === key)) return { error: 'Já existe um ADM com esse nome.' };
-    setAdmins([...admins, { key, label, password, hidden: false }]);
+    const passwordHash = await sha256Hex(password.trim().toLowerCase());
+    setAdmins([...admins, { key, label, passwordHash, hidden: false }]);
     logActivity(`adicionou ${label} como novo ADM`);
     return {};
   };
@@ -334,14 +315,14 @@ export default function App() {
     setAdminPendingDelete(null);
   };
 
-  const handleEditAdminPassword = (key, newPassword) => {
+  const handleEditAdminPassword = async (key, newPassword) => {
     if (!newPassword.trim()) return { error: 'Digite a nova senha.' };
     const admin = admins.find((a) => a.key === key);
     if (!admin) return { error: 'ADM não encontrado.' };
-    const senha = newPassword.trim();
-    setAdmins(admins.map((a) => (a.key === key ? { ...a, password: senha } : a)));
+    const passwordHash = await sha256Hex(newPassword.trim().toLowerCase());
+    setAdmins(admins.map((a) => (a.key === key ? { ...a, passwordHash } : a)));
     logActivity(`redefiniu a senha do ADM ${admin.label}`);
-    if (key === currentAdmin) writeStoredSession({ key, password: senha });
+    if (key === currentAdmin) writeStoredSession({ key, passwordHash });
     triggerAlert(`Senha de ${admin.label} atualizada!`, 'success');
     return {};
   };
@@ -393,8 +374,9 @@ export default function App() {
     setPlayers(players.map((p) => {
       if (p.id !== playerId) return p;
       if (category === 'Goleiro') return { ...p, posicaoFixa: 'Goleiro' };
-      if (category === 'Avulso') return { ...p, posicaoFixa: 'Linha', tipo: 'Avulso' };
-      return { ...p, posicaoFixa: 'Linha', tipo: 'Mensalista' };
+      const ratings = p.posicaoFixa === 'Goleiro' && p.notaMedia === undefined ? buildDefaultRatings() : {};
+      if (category === 'Avulso') return { ...p, ...ratings, posicaoFixa: 'Linha', tipo: 'Avulso' };
+      return { ...p, ...ratings, posicaoFixa: 'Linha', tipo: 'Mensalista' };
     }));
     if (player) logActivity(`moveu ${player.nome} para ${category}`);
   };
@@ -404,9 +386,13 @@ export default function App() {
     const player = players.find((p) => p.id === playerId);
     if (!player) return;
     if (!window.confirm(`Excluir ${player.nome} definitivamente?`)) return;
+    const snapshot = players;
     setPlayers(players.filter((p) => p.id !== playerId));
-    triggerAlert(`${player.nome} excluído.`, 'info');
     logActivity(`excluiu ${player.nome}`);
+    scheduleUndo(`${player.nome} excluído`, () => {
+      setPlayers(snapshot);
+      logActivity(`desfez a exclusão de ${player.nome}`);
+    });
   };
 
   const handleAddPlayer = (nome, category) => {
@@ -439,7 +425,7 @@ export default function App() {
     logActivity(`editou o perfil de ${nome}`);
   };
 
-  const handleApplyImport = (matchedUpdates, avulsosToAdd) => {
+  const handleApplyImport = (matchedUpdates, avulsosToAdd, goleirosToAdd = []) => {
     if (isViewer) return;
     const updated = players.map((p) => {
       const update = matchedUpdates.find((m) => m.playerId === p.id);
@@ -455,10 +441,21 @@ export default function App() {
       ...buildDefaultRatings(),
     }));
 
-    setPlayers([...updated, ...newAvulsos]);
+    const newGoleiros = goleirosToAdd.map((g, idx) => ({
+      id: `g-${Date.now()}-${idx}`,
+      nome: g.nome,
+      tipo: 'Mensalista',
+      posicaoFixa: 'Goleiro',
+      statusPresenca: g.present,
+    }));
+
+    setPlayers([...updated, ...newAvulsos, ...newGoleiros]);
     setShowImportModal(false);
-    triggerAlert(`Lista aplicada! ${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s) criado(s).`, 'success');
-    logActivity(`importou a lista de presença (${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s))`);
+    triggerAlert(
+      `Lista aplicada! ${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s) e ${newGoleiros.length} goleiro(s) criado(s).`,
+      'success'
+    );
+    logActivity(`importou a lista de presença (${matchedUpdates.length} atualizado(s), ${newAvulsos.length} avulso(s), ${newGoleiros.length} goleiro(s))`);
   };
 
   const handleDraftTeams = () => {
@@ -483,6 +480,7 @@ export default function App() {
         players: t.players.map((p) => ({ id: p.id, nome: p.nome })),
       })),
       goals: [],
+      finalizado: false,
     };
 
     setGeneratedTeams(teams);
@@ -490,7 +488,7 @@ export default function App() {
     setMatchHistory([historyRecord, ...matchHistory]);
     setLastDraftEvent({ id: historyRecord.id, adminKey: currentAdmin, timestamp: Date.now() });
     triggerAlert('Time tirado com sucesso!', 'success');
-    logActivity('tirou os times');
+    logActivity('tirou os times', { groupKey: 'teams-draft', delta: 1 });
     setActiveTab('times');
   };
 
@@ -499,7 +497,7 @@ export default function App() {
     setTeamsDrafted(false);
     setGeneratedTeams([]);
     triggerAlert('Chamada liberada!', 'info');
-    logActivity('resetou os times (nova chamada)');
+    logActivity('resetou os times (nova chamada)', { groupKey: 'teams-draft', delta: -1 });
     setActiveTab('presenca');
   };
 
@@ -509,8 +507,17 @@ export default function App() {
     logActivity('alterou a data de um sorteio no histórico');
   };
 
+  const handleFinalizeMatch = (matchId) => {
+    if (!isRealAdmin) return;
+    setMatchHistory(matchHistory.map((m) => (m.id === matchId ? { ...m, finalizado: true, finalizadoEm: new Date().toISOString() } : m)));
+    setMatchPendingFinalize(null);
+    triggerAlert('Jogo finalizado! Só ADMs podem editar esse jogo agora.', 'success');
+    logActivity('finalizou o jogo atual');
+  };
+
   const handleAddGoal = (matchId, playerId, playerNome) => {
-    if (!isAdmin || isViewer) return;
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!canEditMatchStats(match)) return;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const existing = m.goals.find((g) => g.playerId === playerId);
@@ -519,10 +526,12 @@ export default function App() {
         : [...m.goals, { playerId, nome: playerNome, gols: 1, assistencias: 0 }];
       return { ...m, goals };
     }));
+    logActivity(`marcou um gol de ${playerNome}`, { groupKey: `goal-${matchId}-${playerId}`, delta: 1 });
   };
 
-  const handleRemoveGoal = (matchId, playerId) => {
-    if (!isAdmin || isViewer) return;
+  const handleRemoveGoal = (matchId, playerId, playerNome) => {
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!canEditMatchStats(match)) return;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const goals = m.goals
@@ -530,10 +539,12 @@ export default function App() {
         .filter((g) => (g.gols || 0) > 0 || (g.assistencias || 0) > 0);
       return { ...m, goals };
     }));
+    logActivity(`removeu um gol de ${playerNome}`, { groupKey: `goal-${matchId}-${playerId}`, delta: -1 });
   };
 
   const handleAddAssist = (matchId, playerId, playerNome) => {
-    if (!isAdmin || isViewer) return;
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!canEditMatchStats(match)) return;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const existing = m.goals.find((g) => g.playerId === playerId);
@@ -542,10 +553,12 @@ export default function App() {
         : [...m.goals, { playerId, nome: playerNome, gols: 0, assistencias: 1 }];
       return { ...m, goals };
     }));
+    logActivity(`marcou uma assistência de ${playerNome}`, { groupKey: `assist-${matchId}-${playerId}`, delta: 1 });
   };
 
-  const handleRemoveAssist = (matchId, playerId) => {
-    if (!isAdmin || isViewer) return;
+  const handleRemoveAssist = (matchId, playerId, playerNome) => {
+    const match = matchHistory.find((m) => m.id === matchId);
+    if (!canEditMatchStats(match)) return;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       const goals = m.goals
@@ -553,6 +566,7 @@ export default function App() {
         .filter((g) => (g.gols || 0) > 0 || (g.assistencias || 0) > 0);
       return { ...m, goals };
     }));
+    logActivity(`removeu uma assistência de ${playerNome}`, { groupKey: `assist-${matchId}-${playerId}`, delta: -1 });
   };
 
   function resultCount(match, teamId, type) {
@@ -564,35 +578,49 @@ export default function App() {
   }
 
   const handleAddResult = (matchId, teamId, type) => {
-    if (!isAdmin || isViewer) return;
     const match = matchHistory.find((m) => m.id === matchId);
-    if (!match) return;
+    if (!match || !canEditMatchStats(match)) return;
     const nextValue = resultCount(match, teamId, type) + 1;
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       return { ...m, teams: m.teams.map((t) => (t.id === teamId ? { ...t, [type]: nextValue } : t)) };
     }));
     const team = match.teams.find((t) => t.id === teamId);
-    if (team) logActivity(`marcou ${type === 'vitorias' ? 'uma vitória' : 'um empate'} pro ${team.name}`);
+    if (team) {
+      logActivity(`marcou ${type === 'vitorias' ? 'uma vitória' : 'um empate'} pro ${team.name}`, {
+        groupKey: `result-${matchId}-${teamId}-${type}`,
+        delta: 1,
+      });
+    }
   };
 
   const handleRemoveResult = (matchId, teamId, type) => {
-    if (!isAdmin || isViewer) return;
     const match = matchHistory.find((m) => m.id === matchId);
-    if (!match) return;
+    if (!match || !canEditMatchStats(match)) return;
     const nextValue = Math.max(0, resultCount(match, teamId, type) - 1);
     setMatchHistory(matchHistory.map((m) => {
       if (m.id !== matchId) return m;
       return { ...m, teams: m.teams.map((t) => (t.id === teamId ? { ...t, [type]: nextValue } : t)) };
     }));
+    const team = match.teams.find((t) => t.id === teamId);
+    if (team) {
+      logActivity(`removeu ${type === 'vitorias' ? 'uma vitória' : 'um empate'} pro ${team.name}`, {
+        groupKey: `result-${matchId}-${teamId}-${type}`,
+        delta: -1,
+      });
+    }
   };
 
   const handleDeleteMatch = (matchId) => {
     if (!isAdmin || isViewer) return;
+    const snapshot = matchHistory;
     setMatchHistory(matchHistory.filter((m) => m.id !== matchId));
     setMatchPendingDelete(null);
-    triggerAlert('Sorteio excluído do histórico.', 'info');
     logActivity('excluiu um sorteio do histórico');
+    scheduleUndo('Sorteio excluído do histórico', () => {
+      setMatchHistory(snapshot);
+      logActivity('desfez a exclusão de um sorteio');
+    });
   };
 
   const handleCopyTeamsText = () => {
@@ -644,6 +672,10 @@ export default function App() {
     const avg = computeNotaMedia({ ...ratingTargetPlayer, ...updates }, admins);
 
     setPlayers(players.map((p) => (p.id === ratingTargetPlayer.id ? { ...p, ...updates, notaMedia: avg } : p)));
+    setRatingHistory([
+      ...ratingHistory,
+      { playerId: ratingTargetPlayer.id, nome: ratingTargetPlayer.nome, notaMedia: avg, date: new Date().toISOString() },
+    ].slice(-3000));
 
     setShowRatingModal(false);
     setRatingTargetPlayer(null);
@@ -679,7 +711,7 @@ export default function App() {
   }, [players, searchQuery]);
 
   return (
-    <div className="min-h-dvh bg-fc-cream text-fc-dark flex flex-col font-sans select-none pb-28 relative overflow-x-hidden" style={bgTextureStyle}>
+    <div className="min-h-dvh bg-fc-cream text-fc-ink flex flex-col font-sans select-none pb-24 md:pb-8 relative overflow-x-hidden" style={bgTextureStyle}>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="fc-blob absolute -top-16 -left-16 w-72 h-72 bg-fc-limesoft/40 rounded-full blur-3xl" />
         <div className="fc-blob absolute top-1/3 -right-20 w-80 h-80 bg-fc-lime/20 rounded-full blur-3xl" style={{ animationDelay: '2s' }} />
@@ -687,6 +719,7 @@ export default function App() {
       </div>
 
       <Toast alert={systemAlert} />
+      <UndoToast state={undoState} onUndo={handleUndo} />
       <DraftNotification
         notice={draftNotice}
         admins={admins}
@@ -705,7 +738,14 @@ export default function App() {
         onOpenSettings={() => setShowSettingsModal(true)}
       />
 
-      <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-4">
+      <div className="flex-1 flex md:flex-row md:items-start md:gap-6 md:max-w-6xl md:w-full md:mx-auto md:px-6 md:py-6">
+      <SideNav isAdmin={isAdmin} activeTab={activeTab} onChangeTab={setActiveTab} />
+      <div className="hidden md:block w-px self-stretch bg-fc-line/50 shrink-0" />
+      <main className="flex-1 min-w-0 max-w-md w-full mx-auto px-3.5 py-3 md:max-w-none md:mx-0 md:px-0 md:py-0">
+        {isLoadingData ? (
+          <Skeleton />
+        ) : (
+          <>
         {activeTab === 'times' && (
           <TimesTab
             players={players}
@@ -714,6 +754,9 @@ export default function App() {
             currentMatch={teamsDrafted ? matchHistory[0] : null}
             isAdmin={isAdmin}
             isViewer={isViewer}
+            isRealAdmin={isRealAdmin}
+            canEditStats={canEditMatchStats(teamsDrafted ? matchHistory[0] : null)}
+            matchLocked={isMatchLocked(teamsDrafted ? matchHistory[0] : null)}
             copied={copied}
             onCopyTeams={handleCopyTeamsText}
             onResetTeams={handleResetTeams}
@@ -724,6 +767,16 @@ export default function App() {
             onRemoveAssist={handleRemoveAssist}
             onAddResult={handleAddResult}
             onRemoveResult={handleRemoveResult}
+            onRequestFinalize={() => matchHistory[0] && setMatchPendingFinalize(matchHistory[0].id)}
+          />
+        )}
+
+        {activeTab === 'jogadores' && (
+          <JogadoresTab
+            players={players}
+            matchHistory={matchHistory}
+            badgesByPlayerId={badgesByPlayerId}
+            onOpenProfile={setProfileTargetPlayer}
           />
         )}
 
@@ -733,6 +786,7 @@ export default function App() {
             isViewer={isViewer}
             linePlayersList={linePlayersList}
             goalkeepersList={goalkeepersList}
+            badgesByPlayerId={badgesByPlayerId}
             requiredCount={MIN_JOGADORES_LINHA}
             allLinePresent={allLinePresent}
             allGoalkeepersPresent={allGoalkeepersPresent}
@@ -755,6 +809,8 @@ export default function App() {
             players={players}
             admins={admins}
             isViewer={isViewer}
+            badgesByPlayerId={badgesByPlayerId}
+            onOpenProfile={setProfileTargetPlayer}
             onOpenRatingModal={handleOpenRatingModal}
             onChangeCategory={handleChangeCategory}
             onDeletePlayer={handleDeletePlayer}
@@ -769,6 +825,7 @@ export default function App() {
             players={players}
             isAdmin={isAdmin}
             isViewer={isViewer}
+            canEditStats={canEditMatchStats}
             onRequestDeleteMatch={(matchId) => setMatchPendingDelete(matchId)}
             onUpdateDate={handleUpdateMatchDate}
             onAddResult={handleAddResult}
@@ -779,7 +836,10 @@ export default function App() {
             onRemoveAssist={handleRemoveAssist}
           />
         )}
+          </>
+        )}
       </main>
+      </div>
 
       <BottomNav isAdmin={isAdmin} activeTab={activeTab} onChangeTab={setActiveTab} />
 
@@ -883,6 +943,25 @@ export default function App() {
           message="Isso remove o acesso desse ADM pra sempre. Ele não vai mais conseguir entrar com a senha dele."
           onConfirm={handleConfirmDeleteAdmin}
           onClose={() => setAdminPendingDelete(null)}
+        />
+      )}
+
+      {profileTargetPlayer && (
+        <PlayerProfileModal
+          player={profileTargetPlayer}
+          badges={badgesByPlayerId.get(profileTargetPlayer.id) || []}
+          onClose={() => setProfileTargetPlayer(null)}
+        />
+      )}
+
+      {matchPendingFinalize && (
+        <ConfirmActionModal
+          title="Finalizar jogo"
+          message="Depois de finalizado, só ADMs vão poder editar gols, assistências e vitórias desse jogo. Tem certeza?"
+          confirmLabel="Finalizar jogo"
+          icon="lock"
+          onConfirm={() => handleFinalizeMatch(matchPendingFinalize)}
+          onClose={() => setMatchPendingFinalize(null)}
         />
       )}
     </div>

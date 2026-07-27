@@ -37,8 +37,8 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
-        <Icon name="image" size={16} className="text-fc-dark/60" /> Editar jogador
+      <h3 className="text-[15px] font-semibold text-fc-ink mb-1 flex items-center gap-2">
+        <Icon name="image" size={16} className="text-fc-ink/60" /> Editar jogador
       </h3>
       <p className="text-[12px] text-fc-muted mb-4">Troque o nome, a foto de perfil e a foto de jogo.</p>
 
@@ -50,7 +50,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-[12px] font-medium text-fc-dark bg-fc-cream hover:bg-fc-line px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+              className="text-[12px] font-medium text-fc-ink bg-fc-cream hover:bg-fc-line px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
             >
               <Icon name="image" size={13} /> Trocar foto
             </button>
@@ -58,7 +58,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               <button
                 type="button"
                 onClick={() => setFoto('')}
-                className="text-[12px] font-medium text-fc-coraldark bg-white border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
+                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
               >
                 Remover
               </button>
@@ -77,7 +77,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
             <button
               type="button"
               onClick={() => fileJogoInputRef.current?.click()}
-              className="text-[12px] font-medium text-fc-dark bg-fc-cream hover:bg-fc-line px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+              className="text-[12px] font-medium text-fc-ink bg-fc-cream hover:bg-fc-line px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
             >
               <Icon name="image" size={13} /> Trocar foto
             </button>
@@ -85,7 +85,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               <button
                 type="button"
                 onClick={() => setFotoJogo('')}
-                className="text-[12px] font-medium text-fc-coraldark bg-white border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
+                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
               >
                 Remover
               </button>
@@ -99,14 +99,14 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
           placeholder="Nome do jogador"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
+          className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition"
         />
 
         <div className="flex gap-2 pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+            className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
           >
             Cancelar
           </button>

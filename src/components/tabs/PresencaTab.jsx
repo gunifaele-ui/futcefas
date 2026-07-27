@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Avatar from '../Avatar';
 import Icon from '../Icon';
+import { getTopBadge } from '../../utils/badges';
 
 const TRIPLE_CLICK_WINDOW_MS = 650;
 
@@ -9,14 +10,14 @@ function SelectAllButton({ allSelected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-fc-line bg-white hover:bg-fc-cream text-fc-dark/70 active:scale-95 transition shrink-0"
+      className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-fc-line bg-fc-surface hover:bg-fc-cream text-fc-ink/70 active:scale-95 transition shrink-0"
     >
       {allSelected ? 'Desmarcar todos' : 'Marcar todos'}
     </button>
   );
 }
 
-function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColor, subLabel, subLabelColor, isViewer }) {
+function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColor, badge, subLabel, subLabelColor, isViewer }) {
   const clickTrack = useRef({ count: 0, lastClick: 0 });
 
   const handleClick = () => {
@@ -49,7 +50,7 @@ function PlayerChip({ p, palette, onDragStart, onToggle, onToggleTipo, badgeColo
           <Icon name="check" size={9} strokeWidth={3} />
         </span>
       )}
-      <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
+      <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" badge={badge} />
       <span className="text-[11px] leading-tight font-medium break-words hyphens-auto block w-full mt-0.5">{p.nome}</span>
       <span className={`text-[9px] font-normal block ${subLabelColor}`}>{subLabel}</span>
     </div>
@@ -61,6 +62,7 @@ export default function PresencaTab({
   isViewer,
   linePlayersList,
   goalkeepersList,
+  badgesByPlayerId,
   requiredCount,
   onTogglePresence,
   onToggleTipo,
@@ -81,10 +83,10 @@ export default function PresencaTab({
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
+      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card">
         <div className="flex justify-between items-center mb-1 gap-2">
           <div>
-            <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Lista de quem vai</h2>
+            <h2 className="text-[15px] font-semibold text-fc-ink tracking-tight">Lista de quem vai</h2>
             <p className="text-[11px] text-fc-muted mt-0.5">
               {isViewer ? 'Modo visualização — sem edição.' : 'Só clicar no nome pra colocar a presença.'}
             </p>
@@ -95,7 +97,7 @@ export default function PresencaTab({
               <button
                 onClick={onOpenSearch}
                 title="Buscar jogador"
-                className="w-8 h-8 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-dark/70 flex items-center justify-center active:scale-95 transition"
+                className="w-8 h-8 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-ink/70 flex items-center justify-center active:scale-95 transition"
               >
                 <Icon name="search" size={15} />
               </button>
@@ -103,7 +105,7 @@ export default function PresencaTab({
               <button
                 onClick={onOpenImport}
                 title="Colar lista do WhatsApp"
-                className="w-8 h-8 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-dark/70 flex items-center justify-center active:scale-95 transition"
+                className="w-8 h-8 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-ink/70 flex items-center justify-center active:scale-95 transition"
               >
                 <Icon name="clipboard" size={15} />
               </button>
@@ -119,27 +121,27 @@ export default function PresencaTab({
         </div>
 
         <div className="mt-3 bg-fc-limesoft rounded-xl px-3 py-2.5 flex justify-between items-center gap-2">
-          <span className="text-[13px] font-semibold text-fc-dark">
+          <span className="text-[13px] font-semibold text-fc-ink">
             {linePresentCount} {linePresentCount === 1 ? 'pessoa vai' : 'pessoas vão'} hoje
             {goalkeeperPresentCount > 0 && ` + ${goalkeeperPresentCount} ${goalkeeperPresentCount === 1 ? 'goleiro' : 'goleiros'}`}
           </span>
-          {!isViewer && <span className="text-[11px] text-fc-dark/60">Arraste entre as listas para trocar posição</span>}
+          {!isViewer && <span className="text-[11px] text-fc-ink/60">Arraste entre as listas para trocar posição</span>}
         </div>
       </div>
 
       <div
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, 'Goleiro')}
-        className="bg-white border border-fc-line rounded-2xl p-3.5 shadow-card"
+        className="bg-fc-surface border border-fc-line rounded-2xl p-3.5 shadow-card"
       >
         <div className="flex items-center justify-between mb-2.5 gap-2">
-          <span className="text-[12px] font-medium text-fc-dark/70 flex items-center gap-1.5">
+          <span className="text-[12px] font-medium text-fc-ink/70 flex items-center gap-1.5">
             <Icon name="gloves" size={14} /> Goleiros ({goalkeepersList.filter((p) => p.statusPresenca).length} presentes)
           </span>
           {!isViewer && <SelectAllButton allSelected={allGoalkeepersPresent} onClick={onToggleAllGoalkeepers} />}
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
           {goalkeepersList.map((p) => (
             <PlayerChip
               key={p.id}
@@ -148,12 +150,13 @@ export default function PresencaTab({
               onDragStart={onDragStart}
               onToggle={onTogglePresence}
               onToggleTipo={onToggleTipo}
+              badge={getTopBadge(badgesByPlayerId?.get(p.id))}
               badgeColor="bg-fc-coral"
               subLabel="GK"
               subLabelColor="text-fc-muted"
               palette={{
-                active: 'bg-orange-50/60 border-fc-coral/30 text-fc-dark',
-                inactive: 'bg-white border-fc-line text-fc-muted',
+                active: 'bg-orange-50/60 border-fc-coral/30 text-fc-ink',
+                inactive: 'bg-fc-surface border-fc-line text-fc-muted',
               }}
             />
           ))}
@@ -163,17 +166,17 @@ export default function PresencaTab({
       <div
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, 'Linha')}
-        className="bg-white border border-fc-line rounded-2xl p-3.5 shadow-card"
+        className="bg-fc-surface border border-fc-line rounded-2xl p-3.5 shadow-card"
       >
         <div className="flex items-center justify-between mb-1 gap-2">
-          <span className="text-[12px] font-medium text-fc-dark/70 flex items-center gap-1.5">
+          <span className="text-[12px] font-medium text-fc-ink/70 flex items-center gap-1.5">
             <Icon name="run" size={14} /> Jogadores de linha ({linePlayersList.filter((p) => p.statusPresenca).length} presentes)
           </span>
           {!isViewer && <SelectAllButton allSelected={allLinePresent} onClick={onToggleAllLine} />}
         </div>
         <p className="text-[11px] text-fc-muted mb-2.5">{requiredCount} necessários pro sorteio</p>
 
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
           {linePlayersList
             .filter((p) => p.tipo === 'Mensalista')
             .map((p) => (
@@ -184,12 +187,13 @@ export default function PresencaTab({
                 onDragStart={onDragStart}
                 onToggle={onTogglePresence}
                 onToggleTipo={onToggleTipo}
+                badge={getTopBadge(badgesByPlayerId?.get(p.id))}
                 badgeColor="bg-fc-dark"
                 subLabel="Mensal"
                 subLabelColor="text-fc-muted"
                 palette={{
-                  active: 'bg-fc-limesoft border-fc-lime/40 text-fc-dark',
-                  inactive: 'bg-white border-fc-line text-fc-muted',
+                  active: 'bg-fc-limesoft border-fc-lime/40 text-fc-ink',
+                  inactive: 'bg-fc-surface border-fc-line text-fc-muted',
                 }}
               />
             ))}
@@ -198,7 +202,7 @@ export default function PresencaTab({
         {linePlayersList.some((p) => p.tipo === 'Avulso') && (
           <div className="mt-3 border-t border-fc-line pt-3">
             <span className="text-[11px] font-medium text-fc-muted block mb-2">Avulsos</span>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
               {linePlayersList
                 .filter((p) => p.tipo === 'Avulso')
                 .map((p) => (
@@ -209,12 +213,13 @@ export default function PresencaTab({
                     onDragStart={onDragStart}
                     onToggle={onTogglePresence}
                     onToggleTipo={onToggleTipo}
+                    badge={getTopBadge(badgesByPlayerId?.get(p.id))}
                     badgeColor="bg-fc-dark"
                     subLabel="Avulso"
                     subLabelColor="text-fc-muted"
                     palette={{
-                      active: 'bg-fc-limesoft border-fc-lime/40 text-fc-dark',
-                      inactive: 'bg-white border-fc-line text-fc-muted',
+                      active: 'bg-fc-limesoft border-fc-lime/40 text-fc-ink',
+                      inactive: 'bg-fc-surface border-fc-line text-fc-muted',
                     }}
                   />
                 ))}

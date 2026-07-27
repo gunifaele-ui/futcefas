@@ -1,20 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'media',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
         fc: {
+          // Cores de marca: fixas nos dois temas (botões, badges, ícones sólidos).
           dark: '#1E2E28',
           dark2: '#16221E',
-          ink: '#1E2E28',
           lime: '#8FCB5C',
-          limesoft: '#EDF4E3',
           coral: '#DF7C64',
           coraldark: '#C4664F',
-          cream: '#F5F6F3',
-          muted: '#98A09A',
-          line: '#ECEEE9',
+          // Cores de superfície/neutras: reagem ao tema via variáveis CSS (ver index.css).
+          ink: 'rgb(var(--fc-ink) / <alpha-value>)',
+          limesoft: 'rgb(var(--fc-limesoft) / <alpha-value>)',
+          cream: 'rgb(var(--fc-cream) / <alpha-value>)',
+          muted: 'rgb(var(--fc-muted) / <alpha-value>)',
+          line: 'rgb(var(--fc-line) / <alpha-value>)',
+          surface: 'rgb(var(--fc-surface) / <alpha-value>)',
         },
       },
       fontFamily: {

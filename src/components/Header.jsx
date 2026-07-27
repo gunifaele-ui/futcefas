@@ -10,7 +10,7 @@ export default function Header({ isAdmin, currentAdmin, admins, onLogoClick, onL
       style={{ paddingTop: 'calc(0.875rem + env(safe-area-inset-top, 0px))' }}
     >
       <div className="absolute top-4 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="flex items-center w-full max-w-md gap-1.5">
+      <div className="flex items-center w-full max-w-md md:max-w-6xl gap-1.5">
         <div className="flex-1 min-w-0 flex items-center gap-1.5">
           {isAdmin && !isViewerRole && (
             <>

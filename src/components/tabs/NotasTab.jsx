@@ -3,6 +3,7 @@ import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { ratingTone } from '../../utils/playerVisuals';
 import { missingRaterLabels } from '../../utils/ratings';
+import { getTopBadge } from '../../utils/badges';
 
 const SUBTABS = [
   { key: 'Mensalista', label: 'Mensalistas' },
@@ -12,9 +13,9 @@ const SUBTABS = [
 
 function IconButton({ onClick, title, icon, tone = 'neutral' }) {
   const tones = {
-    neutral: 'bg-fc-cream hover:bg-fc-line text-fc-dark/70',
+    neutral: 'bg-fc-cream hover:bg-fc-line text-fc-ink/70',
     dark: 'bg-fc-dark hover:bg-fc-dark2 text-white',
-    danger: 'bg-white hover:bg-orange-50 border border-fc-line text-fc-coraldark',
+    danger: 'bg-fc-surface hover:bg-orange-50 border border-fc-line text-fc-coraldark',
   };
 
   return (
@@ -28,7 +29,18 @@ function IconButton({ onClick, title, icon, tone = 'neutral' }) {
   );
 }
 
-export default function NotasTab({ players, admins, isViewer, onOpenRatingModal, onChangeCategory, onDeletePlayer, onOpenAddPlayer, onOpenEditPlayer }) {
+export default function NotasTab({
+  players,
+  admins,
+  isViewer,
+  badgesByPlayerId,
+  onOpenProfile,
+  onOpenRatingModal,
+  onChangeCategory,
+  onDeletePlayer,
+  onOpenAddPlayer,
+  onOpenEditPlayer,
+}) {
   const [subTab, setSubTab] = useState('Mensalista');
   const [sortMode, setSortMode] = useState('nome');
 
@@ -47,9 +59,9 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card flex items-center justify-between gap-2">
+      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Mudar nota</h2>
+          <h2 className="text-[15px] font-semibold text-fc-ink tracking-tight">Mudar nota</h2>
           <p className="text-[11px] text-fc-muted mt-0.5">Nota média formada pela média das notas dos ADMs.</p>
         </div>
         {!isViewer && (
@@ -62,13 +74,13 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
         )}
       </div>
 
-      <div className="flex gap-1 bg-white border border-fc-line p-1 rounded-xl">
+      <div className="flex gap-1 bg-fc-surface border border-fc-line p-1 rounded-xl">
         {SUBTABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setSubTab(tab.key)}
             className={`flex-1 text-[12px] py-1.5 rounded-lg transition ${
-              subTab === tab.key ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
+              subTab === tab.key ? 'bg-fc-limesoft text-fc-ink font-semibold' : 'text-fc-muted font-medium'
             }`}
           >
             {tab.label} <span className="font-normal text-fc-muted/60">{counts[tab.key]}</span>
@@ -78,12 +90,12 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
 
       <div className="flex items-center justify-end gap-1.5 px-0.5">
         <span className="text-[10.5px] text-fc-muted font-medium">Ordenar</span>
-        <div className="flex gap-0.5 bg-white border border-fc-line p-0.5 rounded-lg">
+        <div className="flex gap-0.5 bg-fc-surface border border-fc-line p-0.5 rounded-lg">
           <button
             type="button"
             onClick={() => setSortMode('nome')}
             className={`text-[10.5px] px-2 py-1 rounded-md transition ${
-              sortMode === 'nome' ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
+              sortMode === 'nome' ? 'bg-fc-limesoft text-fc-ink font-semibold' : 'text-fc-muted font-medium'
             }`}
           >
             A-Z
@@ -92,7 +104,7 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
             type="button"
             onClick={() => setSortMode('nota')}
             className={`text-[10.5px] px-2 py-1 rounded-md transition ${
-              sortMode === 'nota' ? 'bg-fc-limesoft text-fc-dark font-semibold' : 'text-fc-muted font-medium'
+              sortMode === 'nota' ? 'bg-fc-limesoft text-fc-ink font-semibold' : 'text-fc-muted font-medium'
             }`}
           >
             Nota
@@ -100,25 +112,32 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-1.5 lg:items-start">
         {sortedList.length === 0 ? (
-          <p className="text-[12px] text-fc-muted text-center py-6">Nenhum jogador nessa categoria.</p>
+          <p className="text-[12px] text-fc-muted text-center py-6 lg:col-span-2">Nenhum jogador nessa categoria.</p>
         ) : (
           sortedList.map((p) => {
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];
+            const topBadge = getTopBadge(badgesByPlayerId?.get(p.id));
             return (
-              <div key={p.id} className="bg-white rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
-                <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
-                <span className="text-[13px] font-medium text-fc-dark break-words min-w-0 flex-1 flex items-center gap-1">
-                  {missing.length > 0 && (
-                    <span title={`Falta nota de: ${missing.join(', ')}`} className="shrink-0 text-fc-coraldark">
-                      <Icon name="alertTriangle" size={12} />
-                    </span>
-                  )}
-                  {p.nome}
-                </span>
+              <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
+                <button
+                  type="button"
+                  onClick={() => onOpenProfile(p)}
+                  className="flex items-center gap-2 min-w-0 flex-1 text-left active:opacity-70 transition"
+                >
+                  <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" badge={topBadge} />
+                  <span className="text-[13px] font-medium text-fc-ink break-words min-w-0 flex items-center gap-1">
+                    {missing.length > 0 && (
+                      <span title={`Falta nota de: ${missing.join(', ')}`} className="shrink-0 text-fc-coraldark">
+                        <Icon name="alertTriangle" size={12} />
+                      </span>
+                    )}
+                    {p.nome}
+                  </span>
+                </button>
                 {!isGoleiro && (
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
                     {p.notaMedia.toFixed(2)}
@@ -128,7 +147,7 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
                   <select
                     value={p.tipo === 'Avulso' ? 'Avulso' : p.posicaoFixa === 'Goleiro' ? 'Goleiro' : 'Mensalista'}
                     onChange={(e) => onChangeCategory(p.id, e.target.value)}
-                    className="text-[10px] font-medium border border-fc-line rounded-lg px-1 py-1.5 bg-fc-cream text-fc-dark/70 shrink-0 focus:outline-none"
+                    className="text-[10px] font-medium border border-fc-line rounded-lg px-1 py-1.5 bg-fc-cream text-fc-ink/70 shrink-0 focus:outline-none"
                     title="Mudar categoria"
                   >
                     <option value="Mensalista">Mensal</option>
@@ -136,8 +155,8 @@ export default function NotasTab({ players, admins, isViewer, onOpenRatingModal,
                     <option value="Goleiro">Goleiro</option>
                   </select>
                 )}
-                {!isViewer && <IconButton onClick={() => onOpenEditPlayer(p)} title="Editar nome/foto" icon="image" />}
-                {!isGoleiro && !isViewer && <IconButton onClick={() => onOpenRatingModal(p)} title="Editar nota" icon="pencil" tone="dark" />}
+                {!isViewer && <IconButton onClick={() => onOpenEditPlayer(p)} title="Editar nome/foto" icon="settings" />}
+                {!isGoleiro && !isViewer && <IconButton onClick={() => onOpenRatingModal(p)} title="Editar nota" icon="clipboard" tone="dark" />}
                 {!isViewer && <IconButton onClick={() => onDeletePlayer(p.id)} title="Excluir jogador" icon="trash" tone="danger" />}
               </div>
             );

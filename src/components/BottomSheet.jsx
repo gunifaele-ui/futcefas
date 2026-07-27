@@ -5,7 +5,7 @@ export default function BottomSheet({ onClose, children }) {
       onClick={onClose}
     >
       <div
-        className="fc-sheet bg-white w-full max-w-md rounded-t-[28px] shadow-nav p-5 max-h-[88vh] overflow-y-auto"
+        className="fc-sheet bg-fc-surface w-full max-w-md rounded-t-[28px] shadow-nav p-5 max-h-[88vh] overflow-y-auto"
         style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
         onClick={(e) => e.stopPropagation()}
       >

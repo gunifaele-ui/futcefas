@@ -1,0 +1,430 @@
+const MIN_QUARTER_MATCHES_FOR_ATTENDANCE = 3;
+const MIN_PAIR_COUNT = 3;
+const EM_ALTA_THRESHOLD = 1;
+const EM_ALTA_MIN_DAYS = 20;
+const EM_ALTA_MAX_DAYS = 45;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function teamResultCount(match, team, type) {
+  if (typeof team[type] === 'number') return team[type];
+  if (type === 'vitorias' && match.winners?.includes(team.id)) return 1;
+  return 0;
+}
+
+function isSameQuarter(isoDate, ref) {
+  const d = new Date(isoDate);
+  return d.getFullYear() === ref.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(ref.getMonth() / 3);
+}
+
+function buildPlayerMatchStats(matchHistory) {
+  const sorted = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const stats = new Map();
+  const ensure = (id, nome) => {
+    if (!stats.has(id)) stats.set(id, { id, nome, matches: [] });
+    return stats.get(id);
+  };
+
+  sorted.forEach((m) => {
+    m.teams.forEach((t) => {
+      const teamWon = teamResultCount(m, t, 'vitorias') > 0;
+      t.players.forEach((p) => {
+        const entry = ensure(p.id, p.nome);
+        const goal = m.goals.find((g) => g.playerId === p.id);
+        entry.matches.push({
+          date: m.date,
+          gols: goal?.gols || 0,
+          assistencias: goal?.assistencias || 0,
+          vitoria: teamWon,
+        });
+      });
+    });
+  });
+
+  return stats;
+}
+
+function currentStreak(playerId, matchHistoryDesc) {
+  let streak = 0;
+  for (const m of matchHistoryDesc) {
+    const played = m.teams.some((t) => t.players.some((p) => p.id === playerId));
+    if (played) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function maxWinStreak(matches) {
+  let max = 0;
+  let cur = 0;
+  matches.forEach((m) => {
+    if (m.vitoria) {
+      cur++;
+      max = Math.max(max, cur);
+    } else {
+      cur = 0;
+    }
+  });
+  return max;
+}
+
+function currentDrySpell(matchesDesc) {
+  let streak = 0;
+  for (const m of matchesDesc) {
+    if (m.gols === 0) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// Conta quantas sequências (runs) separadas de `true` bateram o tamanho mínimo —
+// ex: [T,T,T,F,T,T,T,T,T] com threshold 3 dá 2 (uma run de 3, uma de 5).
+function countQualifyingRuns(sequence, threshold) {
+  let count = 0;
+  let run = 0;
+  sequence.forEach((val) => {
+    if (val) {
+      run++;
+    } else {
+      if (run >= threshold) count++;
+      run = 0;
+    }
+  });
+  if (run >= threshold) count++;
+  return count;
+}
+
+function buildAttendanceRunCounts(playerIds, matchHistoryAsc, thresholds) {
+  const counts = new Map();
+  playerIds.forEach((id) => {
+    const seq = matchHistoryAsc.map((m) => m.teams.some((t) => t.players.some((p) => p.id === id)));
+    counts.set(id, {
+      ferro: countQualifyingRuns(seq, thresholds.ferro),
+      titanio: countQualifyingRuns(seq, thresholds.titanio),
+    });
+  });
+  return counts;
+}
+
+function buildPlayedRunCounts(statsById, thresholds) {
+  const counts = new Map();
+  statsById.forEach((entry, id) => {
+    const winSeq = entry.matches.map((m) => m.vitoria);
+    const drySeq = entry.matches.map((m) => m.gols === 0);
+    counts.set(id, {
+      trator: countQualifyingRuns(winSeq, thresholds.trator),
+      seca: countQualifyingRuns(drySeq, thresholds.seca),
+    });
+  });
+  return counts;
+}
+
+function buildQuarterStats(matchHistory, now) {
+  const quarterMatches = matchHistory.filter((m) => isSameQuarter(m.date, now));
+  const map = new Map();
+  const ensure = (id, nome) => {
+    if (!map.has(id)) map.set(id, { id, nome, gols: 0, assistencias: 0, presencas: 0, vitorias: 0 });
+    return map.get(id);
+  };
+
+  quarterMatches.forEach((m) => {
+    m.teams.forEach((t) => {
+      const vitorias = teamResultCount(m, t, 'vitorias');
+      t.players.forEach((p) => {
+        const entry = ensure(p.id, p.nome);
+        entry.presencas += 1;
+        entry.vitorias += vitorias;
+      });
+    });
+    m.goals.forEach((g) => {
+      const entry = ensure(g.playerId, g.nome);
+      entry.gols += g.gols || 0;
+      entry.assistencias += g.assistencias || 0;
+    });
+  });
+
+  return { list: [...map.values()], quarterMatchCount: quarterMatches.length };
+}
+
+function undisputedQuarterLeader(quarterStatsList, statKey) {
+  const candidates = quarterStatsList.filter((s) => s[statKey] > 0);
+  if (candidates.length === 0) return null;
+  const max = Math.max(...candidates.map((s) => s[statKey]));
+  const tied = candidates.filter((s) => s[statKey] === max);
+  return tied.length === 1 ? tied[0] : null;
+}
+
+function topPair(matchHistory) {
+  const pairCounts = new Map();
+  matchHistory.forEach((m) => {
+    m.teams.forEach((t) => {
+      const roster = t.players;
+      for (let i = 0; i < roster.length; i++) {
+        for (let j = i + 1; j < roster.length; j++) {
+          const key = [roster[i].id, roster[j].id].sort().join('::');
+          pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
+        }
+      }
+    });
+  });
+
+  let bestKey = null;
+  let bestCount = 0;
+  pairCounts.forEach((count, key) => {
+    if (count > bestCount) {
+      bestCount = count;
+      bestKey = key;
+    }
+  });
+
+  if (!bestKey || bestCount < MIN_PAIR_COUNT) return null;
+  return { ids: bestKey.split('::'), count: bestCount };
+}
+
+function ratingImprovement(playerId, ratingHistory, currentNota) {
+  if (currentNota == null) return null;
+  const now = Date.now();
+  const minTime = now - EM_ALTA_MAX_DAYS * DAY_MS;
+  const maxTime = now - EM_ALTA_MIN_DAYS * DAY_MS;
+  const candidates = ratingHistory
+    .filter((r) => r.playerId === playerId)
+    .filter((r) => {
+      const t = new Date(r.date).getTime();
+      return t >= minTime && t <= maxTime;
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (candidates.length === 0) return null;
+  return currentNota - candidates[0].notaMedia;
+}
+
+// Ordem = prioridade pro selo exibido no avatar (troféus/raridade primeiro).
+export const BADGE_DEFINITIONS = [
+  {
+    id: 'campeao_trimestre',
+    icon: '🏆',
+    label: 'Campeão do Trimestre',
+    description: 'Mais vitórias no trimestre atual.',
+    compute: (ctx, player) => {
+      const leader = ctx.quarterCampeao;
+      const achieved = !!leader && leader.id === player.id;
+      return { achieved, detail: achieved ? `${leader.vitorias} vitórias` : null };
+    },
+  },
+  {
+    id: 'artilheiro',
+    icon: '⚽',
+    label: 'Artilheiro',
+    description: 'Mais gols no trimestre atual.',
+    compute: (ctx, player) => {
+      const leader = ctx.quarterArtilheiro;
+      const achieved = !!leader && leader.id === player.id;
+      return { achieved, detail: achieved ? `${leader.gols} gols` : null };
+    },
+  },
+  {
+    id: 'garcom',
+    icon: '🎯',
+    label: 'Garçom',
+    description: 'Mais assistências no trimestre atual.',
+    compute: (ctx, player) => {
+      const leader = ctx.quarterGarcom;
+      const achieved = !!leader && leader.id === player.id;
+      return { achieved, detail: achieved ? `${leader.assistencias} assist.` : null };
+    },
+  },
+  {
+    id: 'sequencia_titanio',
+    icon: '💎',
+    label: 'Sequência de Titânio',
+    description: '20 peladas seguidas sem faltar.',
+    compute: (ctx, player) => {
+      const current = ctx.streaks.get(player.id) || 0;
+      const count = ctx.attendanceRunCounts.get(player.id)?.titanio || 0;
+      return { achieved: count > 0, count, detail: `${current} seguidas agora` };
+    },
+  },
+  {
+    id: 'veterano',
+    icon: '🏛️',
+    label: 'Veterano',
+    description: '50 peladas jogadas.',
+    compute: (ctx, player) => {
+      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      return { achieved: total >= 50, detail: `${total} peladas` };
+    },
+  },
+  {
+    id: 'trator',
+    icon: '⚡',
+    label: 'Trator',
+    description: '3 ou mais vitórias seguidas.',
+    compute: (ctx, player) => {
+      const s = ctx.statsById.get(player.id);
+      const best = s ? maxWinStreak(s.matches) : 0;
+      const count = ctx.playedRunCounts.get(player.id)?.trator || 0;
+      return { achieved: count > 0, count, detail: `${best} seguidas` };
+    },
+  },
+  {
+    id: 'hat_trick',
+    icon: '🎩',
+    label: 'Hat-trick',
+    description: '3 ou mais gols numa pelada só.',
+    compute: (ctx, player) => {
+      const s = ctx.statsById.get(player.id);
+      const count = s ? s.matches.filter((m) => m.gols >= 3).length : 0;
+      const best = s ? Math.max(0, ...s.matches.map((m) => m.gols)) : 0;
+      return { achieved: count > 0, count, detail: count > 0 ? `${best} gols numa pelada` : null };
+    },
+  },
+  {
+    id: 'sempre_presente',
+    icon: '📅',
+    label: 'Sempre Presente',
+    description: 'Maior taxa de presença do trimestre.',
+    compute: (ctx, player) => {
+      const leader = ctx.quarterAttendanceLeader;
+      const achieved = !!leader && leader.id === player.id;
+      return { achieved, detail: achieved ? `${leader.pct}% de presença` : null };
+    },
+  },
+  {
+    id: 'sequencia_ferro',
+    icon: '🔥',
+    label: 'Sequência de Ferro',
+    description: '5 peladas seguidas sem faltar.',
+    compute: (ctx, player) => {
+      const current = ctx.streaks.get(player.id) || 0;
+      const count = ctx.attendanceRunCounts.get(player.id)?.ferro || 0;
+      return { achieved: count > 0, count, detail: `${current} seguidas agora` };
+    },
+  },
+  {
+    id: 'parceria',
+    icon: '🤝',
+    label: 'Parceria',
+    description: 'Integra a dupla mais frequente.',
+    compute: (ctx, player) => {
+      const pair = ctx.pair;
+      const achieved = !!pair && pair.ids.includes(player.id);
+      return { achieved, detail: achieved ? `${pair.count}x juntos` : null };
+    },
+  },
+  {
+    id: 'em_alta',
+    icon: '📈',
+    label: 'Em Alta',
+    description: 'Nota subiu no último mês.',
+    compute: (ctx, player) => {
+      const diff = ratingImprovement(player.id, ctx.ratingHistory, player.notaMedia);
+      const achieved = diff != null && diff >= EM_ALTA_THRESHOLD;
+      return { achieved, detail: achieved ? `+${diff.toFixed(1)} no mês` : null };
+    },
+  },
+  {
+    id: 'fiel',
+    icon: '🎖️',
+    label: 'Fiel',
+    description: '10 peladas jogadas.',
+    compute: (ctx, player) => {
+      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      return { achieved: total >= 10, detail: `${total} peladas` };
+    },
+  },
+  {
+    id: 'estreante',
+    icon: '🐣',
+    label: 'Estreante',
+    description: 'Jogou a primeira pelada.',
+    compute: (ctx, player) => {
+      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      return { achieved: total === 1, detail: total === 1 ? 'Primeira pelada!' : null };
+    },
+  },
+  {
+    id: 'seca',
+    icon: '🧊',
+    label: 'Seca',
+    description: '3 ou mais peladas seguidas sem marcar gol.',
+    compute: (ctx, player) => {
+      if (player.posicaoFixa === 'Goleiro') return { achieved: false, count: 0, detail: null };
+      const s = ctx.statsById.get(player.id);
+      if (!s || s.matches.length === 0) return { achieved: false, count: 0, detail: null };
+      const current = currentDrySpell([...s.matches].reverse());
+      const count = ctx.playedRunCounts.get(player.id)?.seca || 0;
+      return { achieved: count > 0, count, detail: current >= 3 ? `${current} sem gol agora` : null };
+    },
+  },
+];
+
+export function computeBadgesForPlayers(players, matchHistory, ratingHistory = []) {
+  const now = new Date();
+  const statsById = buildPlayerMatchStats(matchHistory);
+  const matchHistoryDesc = [...matchHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const streaks = new Map();
+  statsById.forEach((_, id) => streaks.set(id, currentStreak(id, matchHistoryDesc)));
+
+  const { list: quarterStats, quarterMatchCount } = buildQuarterStats(matchHistory, now);
+  const quarterArtilheiro = undisputedQuarterLeader(quarterStats, 'gols');
+  const quarterGarcom = undisputedQuarterLeader(quarterStats, 'assistencias');
+  const quarterCampeao = undisputedQuarterLeader(quarterStats, 'vitorias');
+
+  const quarterAttendanceLeader = (() => {
+    if (quarterMatchCount < MIN_QUARTER_MATCHES_FOR_ATTENDANCE) return null;
+    const withPct = quarterStats
+      .filter((s) => s.presencas > 0)
+      .map((s) => ({ ...s, pct: Math.round((s.presencas / quarterMatchCount) * 100) }));
+    if (withPct.length === 0) return null;
+    const max = Math.max(...withPct.map((s) => s.pct));
+    const tied = withPct.filter((s) => s.pct === max);
+    return tied.length === 1 ? tied[0] : null;
+  })();
+
+  const pair = topPair(matchHistory);
+
+  const matchHistoryAsc = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const attendanceRunCounts = buildAttendanceRunCounts([...statsById.keys()], matchHistoryAsc, { ferro: 5, titanio: 20 });
+  const playedRunCounts = buildPlayedRunCounts(statsById, { trator: 3, seca: 3 });
+
+  const ctx = {
+    statsById,
+    streaks,
+    quarterArtilheiro,
+    quarterGarcom,
+    quarterCampeao,
+    quarterAttendanceLeader,
+    pair,
+    ratingHistory,
+    attendanceRunCounts,
+    playedRunCounts,
+  };
+
+  const result = new Map();
+  players.forEach((player) => {
+    const badges = BADGE_DEFINITIONS.map((def) => {
+      const { achieved, count, detail } = def.compute(ctx, player);
+      return { id: def.id, icon: def.icon, label: def.label, description: def.description, achieved, count, detail };
+    });
+    result.set(player.id, badges);
+  });
+  return result;
+}
+
+export function getTopBadge(badges) {
+  if (!badges) return null;
+  return badges.find((b) => b.achieved) || null;
+}
+
+export function computeCareerTotals(matchHistory) {
+  const statsById = buildPlayerMatchStats(matchHistory);
+  const totals = new Map();
+  statsById.forEach((entry, id) => {
+    totals.set(id, {
+      gols: entry.matches.reduce((sum, m) => sum + m.gols, 0),
+      assistencias: entry.matches.reduce((sum, m) => sum + m.assistencias, 0),
+      presencas: entry.matches.length,
+      vitorias: entry.matches.filter((m) => m.vitoria).length,
+    });
+  });
+  return totals;
+}

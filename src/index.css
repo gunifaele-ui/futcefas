@@ -2,9 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --fc-ink: 30 46 40;
+  --fc-limesoft: 237 244 227;
+  --fc-cream: 245 246 243;
+  --fc-muted: 152 160 154;
+  --fc-line: 236 238 233;
+  --fc-surface: 255 255 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fc-ink: 231 238 232;
+    --fc-limesoft: 36 51 34;
+    --fc-cream: 18 26 22;
+    --fc-muted: 140 160 152;
+    --fc-line: 38 50 41;
+    --fc-surface: 27 38 32;
+  }
+}
+
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -17,7 +38,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.011em;
   -webkit-tap-highlight-color: transparent;
-  background: #F5F6F3;
+  background: rgb(var(--fc-cream));
+  overscroll-behavior-y: none;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

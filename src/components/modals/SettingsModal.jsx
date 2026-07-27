@@ -16,8 +16,8 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
     setEditError('');
   };
 
-  const handleSavePassword = (key) => {
-    const result = onEditPassword(key, editingSenha);
+  const handleSavePassword = async (key) => {
+    const result = await onEditPassword(key, editingSenha);
     if (result?.error) {
       setEditError(result.error);
       return;
@@ -27,13 +27,13 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
     setEditError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!nome.trim() || !senha.trim()) {
       setError('Preencha nome e senha.');
       return;
     }
-    const result = onAddAdmin(nome.trim(), senha.trim());
+    const result = await onAddAdmin(nome.trim(), senha.trim());
     if (result?.error) {
       setError(result.error);
       return;
@@ -45,8 +45,8 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
-        <Icon name="settings" size={16} className="text-fc-dark/60" /> Configurações
+      <h3 className="text-[15px] font-semibold text-fc-ink mb-1 flex items-center gap-2">
+        <Icon name="settings" size={16} className="text-fc-ink/60" /> Configurações
       </h3>
       <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">
         Gerencie os ADMs que avaliam os jogadores. Ocultar um ADM tira a nota dele da média e some com ele da tela de notas.
@@ -56,7 +56,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
         {admins.map((adm) => (
           <div key={adm.key} className="border border-fc-line rounded-xl p-2.5">
             <div className="flex items-center gap-2">
-              <span className={`text-[13px] font-medium flex-1 ${adm.hidden ? 'text-fc-muted line-through' : 'text-fc-dark'}`}>
+              <span className={`text-[13px] font-medium flex-1 ${adm.hidden ? 'text-fc-muted line-through' : 'text-fc-ink'}`}>
                 {adm.label}
               </span>
               {adm.hidden && (
@@ -66,7 +66,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
                 type="button"
                 onClick={() => (editingKey === adm.key ? setEditingKey(null) : startEditPassword(adm.key))}
                 title="Redefinir senha"
-                className="w-7 h-7 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-dark/70 flex items-center justify-center shrink-0 transition"
+                className="w-7 h-7 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-ink/70 flex items-center justify-center shrink-0 transition"
               >
                 <Icon name="pencil" size={14} />
               </button>
@@ -74,7 +74,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
                 type="button"
                 onClick={() => onToggleHidden(adm.key)}
                 title={adm.hidden ? 'Mostrar ADM' : 'Ocultar ADM'}
-                className="w-7 h-7 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-dark/70 flex items-center justify-center shrink-0 transition"
+                className="w-7 h-7 rounded-lg bg-fc-cream hover:bg-fc-line text-fc-ink/70 flex items-center justify-center shrink-0 transition"
               >
                 <Icon name={adm.hidden ? 'eyeOff' : 'eye'} size={14} />
               </button>
@@ -82,7 +82,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
                 type="button"
                 onClick={() => onDeleteAdmin(adm.key)}
                 title="Excluir ADM"
-                className="w-7 h-7 rounded-lg bg-white hover:bg-orange-50 border border-fc-line text-fc-coraldark flex items-center justify-center shrink-0 transition"
+                className="w-7 h-7 rounded-lg bg-fc-surface hover:bg-orange-50 border border-fc-line text-fc-coraldark flex items-center justify-center shrink-0 transition"
               >
                 <Icon name="trash" size={14} />
               </button>
@@ -95,7 +95,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
                   placeholder="Nova senha"
                   value={editingSenha}
                   onChange={(e) => setEditingSenha(e.target.value)}
-                  className="flex-1 min-w-0 bg-fc-cream border border-fc-line rounded-xl py-2 px-3 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
+                  className="flex-1 min-w-0 bg-fc-cream border border-fc-line rounded-xl py-2 px-3 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition"
                 />
                 <button
                   type="button"
@@ -116,20 +116,20 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-2 border-t border-fc-line pt-4">
-        <p className="text-[12px] font-medium text-fc-dark/70">Novo ADM</p>
+        <p className="text-[12px] font-medium text-fc-ink/70">Novo ADM</p>
         <input
           type="text"
           placeholder="Nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="w-full bg-fc-cream border border-fc-line rounded-xl py-2.5 px-3.5 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
+          className="w-full bg-fc-cream border border-fc-line rounded-xl py-2.5 px-3.5 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition"
         />
         <input
           type="text"
           placeholder="Senha"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          className="w-full bg-fc-cream border border-fc-line rounded-xl py-2.5 px-3.5 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
+          className="w-full bg-fc-cream border border-fc-line rounded-xl py-2.5 px-3.5 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition"
         />
         {error && <p className="text-[12px] text-fc-coraldark font-medium">{error}</p>}
         <button
@@ -144,7 +144,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
         <button
           type="button"
           onClick={onClose}
-          className="w-full bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+          className="w-full bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
         >
           Fechar
         </button>

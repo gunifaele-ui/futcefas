@@ -10,12 +10,12 @@ export default function ConfirmDeleteModal({ title, message, onConfirm, onClose 
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-[15px] font-semibold text-fc-dark mb-1 flex items-center gap-2">
+      <h3 className="text-[15px] font-semibold text-fc-ink mb-1 flex items-center gap-2">
         <Icon name="trash" size={16} className="text-fc-coraldark" /> {title}
       </h3>
       <p className="text-[12px] text-fc-muted mb-4 leading-relaxed">{message}</p>
 
-      <p className="text-[12px] text-fc-dark/70 mb-2">
+      <p className="text-[12px] text-fc-ink/70 mb-2">
         Digite <span className="text-fc-coraldark font-semibold">"apagar"</span> pra confirmar:
       </p>
       <input
@@ -23,7 +23,7 @@ export default function ConfirmDeleteModal({ title, message, onConfirm, onClose 
         placeholder="apagar"
         value={typed}
         onChange={(e) => setTyped(e.target.value)}
-        className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-dark placeholder:text-fc-muted focus:outline-none focus:border-fc-dark/30 focus:bg-white font-medium transition"
+        className="w-full bg-fc-cream border border-fc-line rounded-xl py-3 px-4 text-[13px] text-fc-ink placeholder:text-fc-muted focus:outline-none focus:border-fc-ink/30 focus:bg-fc-surface font-medium transition"
         autoFocus
       />
 
@@ -31,7 +31,7 @@ export default function ConfirmDeleteModal({ title, message, onConfirm, onClose 
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-dark/70 font-medium py-3 rounded-xl text-[13px] transition"
+          className="flex-1 bg-fc-cream hover:bg-fc-line text-fc-ink/70 font-medium py-3 rounded-xl text-[13px] transition"
         >
           Cancelar
         </button>

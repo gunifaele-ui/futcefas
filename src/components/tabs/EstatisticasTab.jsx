@@ -7,8 +7,8 @@ import BottomSheet from '../BottomSheet';
 
 const TOP_LIST_LIMIT = 10;
 
-const INITIAL_COUNT = 1;
-const PAGE_SIZE = 5;
+const INITIAL_COUNT = 2;
+const PAGE_SIZE = 4;
 const INSIGHT_SIZE = 3;
 const RANKING_LIMIT = 5;
 
@@ -48,7 +48,7 @@ function InfoTooltip({ text }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         onBlur={() => setOpen(false)}
-        className="w-3.5 h-3.5 rounded-full border border-fc-dark/25 text-fc-dark/40 flex items-center justify-center text-[9px] font-semibold leading-none shrink-0"
+        className="w-3.5 h-3.5 rounded-full border border-fc-dark/25 text-fc-ink/40 flex items-center justify-center text-[9px] font-semibold leading-none shrink-0"
       >
         i
       </button>
@@ -63,17 +63,17 @@ function InfoTooltip({ text }) {
 
 function StatCard({ icon, title, info, onOpenFull, children }) {
   return (
-    <div className="bg-white rounded-2xl p-3.5 border border-fc-line shadow-card">
+    <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card">
       <div className="flex items-center gap-2 mb-2">
-        <Icon name={icon} size={14} className="text-fc-dark/50" />
-        <h3 className="text-[12.5px] font-semibold text-fc-dark">{title}</h3>
+        <Icon name={icon} size={14} className="text-fc-ink/50" />
+        <h3 className="text-[12.5px] font-semibold text-fc-ink">{title}</h3>
         {info && <InfoTooltip text={info} />}
         {onOpenFull && (
           <button
             type="button"
             onClick={onOpenFull}
             title="Ver ranking completo"
-            className="ml-auto w-5 h-5 flex items-center justify-center text-fc-dark/25 hover:text-fc-dark/60 transition"
+            className="ml-auto w-5 h-5 flex items-center justify-center text-fc-ink/25 hover:text-fc-ink/60 transition"
           >
             <Icon name="chevronDown" size={11} className="-rotate-90" />
           </button>
@@ -97,9 +97,9 @@ const BAR_TONES = {
 
 const CHIP_TONES = {
   warm: 'text-fc-coraldark bg-orange-50',
-  dark: 'text-fc-dark bg-fc-cream',
-  accent: 'text-fc-dark bg-fc-limesoft',
-  neutral: 'text-fc-dark/70 bg-fc-cream',
+  dark: 'text-fc-ink bg-fc-cream',
+  accent: 'text-fc-ink bg-fc-limesoft',
+  neutral: 'text-fc-ink/70 bg-fc-cream',
 };
 
 const MEDAL_TONES = {
@@ -121,7 +121,7 @@ function RankRow({ position, label, valueLabel, pct, tone = 'neutral' }) {
   return (
     <div className="py-1.25">
       <div className="flex justify-between items-center text-[12.5px] gap-2 mb-1">
-        <span className="font-medium text-fc-dark min-w-0 truncate flex items-center gap-1.5">
+        <span className="font-medium text-fc-ink min-w-0 truncate flex items-center gap-1.5">
           {position != null && <RankBadge position={position} />}
           <span className="truncate">{label}</span>
         </span>
@@ -155,7 +155,7 @@ function RankingCard({ icon, title, info, entries, tone, emptyText, limit = RANK
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="w-full text-[11px] font-medium text-fc-dark/50 hover:text-fc-dark pt-1.5 text-center"
+              className="w-full text-[11px] font-medium text-fc-ink/50 hover:text-fc-ink pt-1.5 text-center"
             >
               {expanded ? 'Ver menos' : `Ver mais (+${entries.length - limit})`}
             </button>
@@ -171,9 +171,9 @@ function LeaderTile({ icon, label, name, value, tone, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="relative bg-white rounded-2xl p-3 border border-fc-line shadow-card flex items-center gap-2.5 min-w-0 w-full text-left active:scale-[0.98] transition"
+      className="relative bg-fc-surface rounded-2xl p-3 border border-fc-line shadow-card flex items-center gap-2.5 min-w-0 w-full text-left active:scale-[0.98] transition"
     >
-      <Icon name="chevronDown" size={10} className="absolute top-2.5 right-2.5 text-fc-dark/20 -rotate-90" />
+      <Icon name="chevronDown" size={10} className="absolute top-2.5 right-2.5 text-fc-ink/20 -rotate-90" />
       <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tone}`}>
         <Icon name={icon} size={15} />
       </span>
@@ -181,8 +181,8 @@ function LeaderTile({ icon, label, name, value, tone, onClick }) {
         <p className="text-[9.5px] font-medium text-fc-muted uppercase tracking-wide truncate">{label}</p>
         {name ? (
           <>
-            <p className="text-[12.5px] font-semibold text-fc-dark truncate leading-tight">{name}</p>
-            <p className="text-[10px] text-fc-dark/50 font-medium">{value}</p>
+            <p className="text-[12.5px] font-semibold text-fc-ink truncate leading-tight">{name}</p>
+            <p className="text-[10px] text-fc-ink/50 font-medium">{value}</p>
           </>
         ) : (
           <p className="text-[11px] text-fc-muted mt-0.5">Sem dados</p>
@@ -197,8 +197,8 @@ function LeaderModal({ title, icon, tone, entries, emptyText, onClose }) {
   return (
     <BottomSheet onClose={onClose}>
       <div className="flex items-center gap-2 mb-3">
-        <Icon name={icon} size={16} className="text-fc-dark/60" />
-        <h3 className="text-[15px] font-semibold text-fc-dark">{title}</h3>
+        <Icon name={icon} size={16} className="text-fc-ink/60" />
+        <h3 className="text-[15px] font-semibold text-fc-ink">{title}</h3>
       </div>
       {entries.length === 0 ? (
         <EmptyState>{emptyText}</EmptyState>
@@ -218,6 +218,7 @@ export default function EstatisticasTab({
   players,
   isAdmin,
   isViewer,
+  canEditStats,
   onRequestDeleteMatch,
   onUpdateDate,
   onAddResult,
@@ -390,17 +391,13 @@ export default function EstatisticasTab({
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
-        <h2 className="text-[15px] font-semibold text-fc-dark tracking-tight">Estatísticas</h2>
-      </div>
-
       <div className="flex items-center gap-2 px-1">
-        <h3 className="text-[12px] font-semibold text-fc-dark/70">Destaque do trimestre</h3>
+        <h3 className="text-[12px] font-semibold text-fc-ink/70">Destaque do trimestre</h3>
         <InfoTooltip text="O artilheiro e o garçom só do trimestre atual, considerando as peladas registradas nesse período." />
         <span className="ml-auto text-[10.5px] font-medium text-fc-muted">{currentQuarterLabel(new Date())}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 md:inline-grid md:[grid-template-columns:repeat(2,180px)] md:gap-3">
         <PlayerSpotlightCard
           badgeIcon="ball"
           badgeLabel="Artilheiro"
@@ -426,17 +423,17 @@ export default function EstatisticasTab({
       </div>
 
       <div className="flex items-center gap-2 px-1">
-        <h3 className="text-[12px] font-semibold text-fc-dark/70">Líderes gerais</h3>
+        <h3 className="text-[12px] font-semibold text-fc-ink/70">Líderes gerais</h3>
         <InfoTooltip text="Quem está na frente em cada categoria, somando todas as peladas já registradas (diferente do destaque do trimestre acima)." />
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 md:gap-3">
         <LeaderTile
           icon="trophy"
           label="Mais vitórias"
           name={winRanking[0]?.label}
           value={winRanking[0]?.valueLabel}
-          tone="bg-fc-limesoft text-fc-dark"
+          tone="bg-fc-limesoft text-fc-ink"
           onClick={() => setLeaderModalKey('vitorias')}
         />
         <LeaderTile
@@ -444,40 +441,42 @@ export default function EstatisticasTab({
           label="Sempre presente"
           name={attendanceRanking[0]?.label}
           value={attendanceRanking[0]?.valueLabel}
-          tone="bg-fc-cream text-fc-dark/70"
+          tone="bg-fc-cream text-fc-ink/70"
           onClick={() => setLeaderModalKey('presenca')}
         />
       </div>
 
-      <RankingCard
-        icon="ball"
-        title="Artilheiros"
-        tone="warm"
-        entries={golRanking}
-        emptyText="Nenhum gol registrado ainda."
-        info="Jogadores que mais marcaram gols somando todas as peladas registradas."
-        onOpenFull={() => setLeaderModalKey('gols')}
-      />
-      <RankingCard
-        icon="assist"
-        title="Assistências"
-        tone="dark"
-        entries={assistRanking}
-        emptyText="Nenhuma assistência registrada ainda."
-        info="Jogadores que mais deram assistências somando todas as peladas registradas."
-        onOpenFull={() => setLeaderModalKey('assist')}
-      />
-      <RankingCard
-        icon="trophy"
-        title="Ranking de vitórias"
-        tone="accent"
-        entries={winRanking}
-        emptyText="Nenhuma vitória registrada ainda."
-        info="Jogadores com mais vitórias somando todas as peladas registradas (cada vitória do time conta pra todo mundo que jogou nele)."
-        onOpenFull={() => setLeaderModalKey('vitorias')}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <RankingCard
+          icon="ball"
+          title="Artilheiros"
+          tone="warm"
+          entries={golRanking}
+          emptyText="Nenhum gol registrado ainda."
+          info="Jogadores que mais marcaram gols somando todas as peladas registradas."
+          onOpenFull={() => setLeaderModalKey('gols')}
+        />
+        <RankingCard
+          icon="assist"
+          title="Assistências"
+          tone="dark"
+          entries={assistRanking}
+          emptyText="Nenhuma assistência registrada ainda."
+          info="Jogadores que mais deram assistências somando todas as peladas registradas."
+          onOpenFull={() => setLeaderModalKey('assist')}
+        />
+        <RankingCard
+          icon="trophy"
+          title="Ranking de vitórias"
+          tone="accent"
+          entries={winRanking}
+          emptyText="Nenhuma vitória registrada ainda."
+          info="Jogadores com mais vitórias somando todas as peladas registradas (cada vitória do time conta pra todo mundo que jogou nele)."
+          onOpenFull={() => setLeaderModalKey('vitorias')}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <RankingCard
           icon="users"
           title="Dupla mais frequente"
@@ -487,46 +486,47 @@ export default function EstatisticasTab({
           limit={INSIGHT_SIZE}
           info="As duplas de jogadores que mais vezes jogaram juntas no mesmo time."
         />
-        <div className="grid grid-cols-2 gap-3">
-          <RankingCard
-            icon="target"
-            title="Sempre presente"
-            tone="neutral"
-            entries={attendanceRankingFull}
-            emptyText="Sem dados ainda."
-            info="Jogadores com a maior taxa de presença entre todas as peladas registradas."
-            onOpenFull={() => setLeaderModalKey('presenca')}
-          />
-          <RankingCard
-            icon="flame"
-            title="Sequência atual"
-            tone="warm"
-            entries={streakRanking}
-            emptyText="Sem dados ainda."
-            limit={INSIGHT_SIZE}
-            info="Quantas peladas seguidas, contando as mais recentes, cada jogador vem participando sem faltar."
-          />
-        </div>
+        <RankingCard
+          icon="target"
+          title="Sempre presente"
+          tone="neutral"
+          entries={attendanceRankingFull}
+          emptyText="Sem dados ainda."
+          info="Jogadores com a maior taxa de presença entre todas as peladas registradas."
+          onOpenFull={() => setLeaderModalKey('presenca')}
+        />
+        <RankingCard
+          icon="flame"
+          title="Sequência atual"
+          tone="warm"
+          entries={streakRanking}
+          emptyText="Sem dados ainda."
+          limit={INSIGHT_SIZE}
+          info="Quantas peladas seguidas, contando as mais recentes, cada jogador vem participando sem faltar."
+        />
       </div>
 
-      <div className="bg-white rounded-2xl p-4 border border-fc-line shadow-card">
+      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card">
         <div className="flex items-center gap-2 mb-2.5">
-          <h3 className="text-[13px] font-semibold text-fc-dark">Histórico</h3>
+          <h3 className="text-[13px] font-semibold text-fc-ink">Histórico</h3>
           <InfoTooltip text="Registro dos sorteios já feitos, com os times formados e o resultado de cada pelada." />
         </div>
         {matchHistory.length === 0 ? (
           <EmptyState>Nenhum sorteio registrado ainda.</EmptyState>
         ) : (
-          <div className="space-y-2.5">
-            {visibleMatches.map((m) => (
-              <div key={m.id} className="border border-fc-line rounded-xl p-3">
+          <div className="space-y-2.5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start">
+            {visibleMatches.map((m, i) => {
+              const matchCanEditStats = canEditStats(m);
+              const isTrailingOdd = i === visibleMatches.length - 1 && visibleMatches.length % 2 === 1;
+              return (
+              <div key={m.id} className={`border border-fc-line rounded-xl p-3 ${isTrailingOdd ? 'lg:col-span-2' : ''}`}>
                 <div className="flex justify-between items-center mb-2.5 gap-2">
                   {canEdit ? (
                     <input
                       type="date"
                       value={toDateInputValue(m.date)}
                       onChange={(e) => onUpdateDate(m.id, e.target.value)}
-                      className="text-[12px] font-medium text-fc-dark/70 bg-transparent border-none p-0 focus:outline-none"
+                      className="text-[12px] font-medium text-fc-ink/70 bg-transparent border-none p-0 focus:outline-none"
                     />
                   ) : (
                     <span className="text-[12px] font-medium text-fc-muted">{new Date(m.date).toLocaleDateString('pt-BR')}</span>
@@ -551,14 +551,14 @@ export default function EstatisticasTab({
                         className={`rounded-lg p-2 border ${vitorias > 0 ? 'bg-fc-limesoft border-fc-lime/40' : 'border-fc-line'}`}
                       >
                         <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
-                          <span className="text-[12px] font-medium text-fc-dark">{t.name}</span>
+                          <span className="text-[12px] font-medium text-fc-ink">{t.name}</span>
                           <ResultChip
                             icon="trophy"
                             label="Vitória"
                             shortLabel="Vitória"
                             count={vitorias}
-                            tone="border-fc-lime/50 bg-white text-fc-dark"
-                            canEdit={canEdit}
+                            tone="border-fc-lime/50 bg-fc-surface text-fc-ink"
+                            canEdit={matchCanEditStats}
                             confirmAdd
                             onAdd={() => onAddResult(m.id, t.id, 'vitorias')}
                             onRemove={() => onRemoveResult(m.id, t.id, 'vitorias')}
@@ -573,17 +573,17 @@ export default function EstatisticasTab({
                             return (
                               <PlayerStatTrigger
                                 key={p.id}
-                                canEdit={canEdit}
+                                canEdit={matchCanEditStats}
                                 gols={gols}
                                 assistencias={assistencias}
                                 onAddGoal={() => onAddGoal(m.id, p.id, p.nome)}
                                 onAddAssist={() => onAddAssist(m.id, p.id, p.nome)}
-                                onRemoveGoal={() => onRemoveGoal(m.id, p.id)}
-                                onRemoveAssist={() => onRemoveAssist(m.id, p.id)}
+                                onRemoveGoal={() => onRemoveGoal(m.id, p.id, p.nome)}
+                                onRemoveAssist={() => onRemoveAssist(m.id, p.id, p.nome)}
                               >
                                 <span
-                                  className={`text-[11px] font-medium text-fc-dark/80 bg-white border border-fc-line rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1 transition ${
-                                    canEdit ? 'active:scale-95' : ''
+                                  className={`text-[11px] font-medium text-fc-ink/80 bg-fc-surface border border-fc-line rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1 transition ${
+                                    matchCanEditStats ? 'active:scale-95' : ''
                                   }`}
                                 >
                                   {p.nome}
@@ -607,12 +607,13 @@ export default function EstatisticasTab({
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {visibleCount < matchHistory.length && (
               <button
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                className="w-full text-[12px] font-medium text-fc-dark/70 bg-fc-cream hover:bg-fc-line py-2.5 rounded-xl transition"
+                className="w-full lg:col-span-2 text-[12px] font-medium text-fc-ink/70 bg-fc-cream hover:bg-fc-line py-2.5 rounded-xl transition"
               >
                 Ver mais
               </button>

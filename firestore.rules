@@ -1,9 +1,29 @@
 rules_version = '2';
 
+// O app não usa Firebase Auth, então não dá pra restringir escrita a "só ADM"
+// de verdade aqui — qualquer um com a firebaseConfig (que é pública por natureza)
+// ainda consegue escrever. O que dá pra fazer sem Auth é: (1) restringir ao único
+// documento que o app usa, em vez de aceitar qualquer docId, e (2) validar que o
+// formato dos dados bate com o que o app espera, barrando escritas de lixo/corrompidas.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /app_state/{docId} {
-      allow read, write: if true;
+    match /app_state/main {
+      allow read: if true;
+      allow write: if isValidAppState(request.resource.data);
     }
   }
+}
+
+function isValidAppState(data) {
+  return data.keys().hasOnly([
+    'players', 'generatedTeams', 'teamsDrafted', 'matchHistory',
+    'lastDraftEvent', 'activityLog', 'admins', 'ratingHistory'
+  ])
+    && (!('players' in data) || data.players is list)
+    && (!('generatedTeams' in data) || data.generatedTeams is list)
+    && (!('teamsDrafted' in data) || data.teamsDrafted is bool)
+    && (!('matchHistory' in data) || data.matchHistory is list)
+    && (!('activityLog' in data) || data.activityLog is list)
+    && (!('admins' in data) || data.admins is list)
+    && (!('ratingHistory' in data) || data.ratingHistory is list);
 }

@@ -29,12 +29,12 @@ function TiedBadgeChip({ badgeIcon, badgeLabel, mainValue, mainUnit, chip }) {
 function TiedOverflowModal({ players, onClose }) {
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-[14px] font-semibold text-fc-dark mb-3">Empate entre {players.length} jogadores</h3>
+      <h3 className="text-[14px] font-semibold text-fc-ink mb-3">Empate entre {players.length} jogadores</h3>
       <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
         {players.map((p) => (
           <div key={p.id || p.nome} className="flex items-center gap-2.5 bg-fc-cream rounded-xl px-2.5 py-2">
             <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
-            <span className="text-[13px] font-medium text-fc-dark truncate">{p.nome}</span>
+            <span className="text-[13px] font-medium text-fc-ink truncate">{p.nome}</span>
           </div>
         ))}
       </div>
@@ -49,7 +49,7 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
   const extra = players.length - shown.length;
 
   return (
-    <div className="bg-white rounded-2xl border border-fc-line shadow-card overflow-hidden">
+    <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden">
       <div className="relative aspect-[3/4] bg-fc-cream">
         <TiedBadgeChip badgeIcon={badgeIcon} badgeLabel={badgeLabel} mainValue={mainValue} mainUnit={mainUnit} chip={chip} />
         <div className="absolute inset-0 pt-9 pb-2 px-2 grid grid-cols-2 gap-1.5 auto-rows-fr">
@@ -58,12 +58,12 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
             return (
               <div
                 key={p.id || p.nome}
-                className={`rounded-xl bg-white border border-fc-line flex flex-col items-center justify-center gap-1 p-1 min-w-0 ${
+                className={`rounded-xl bg-fc-surface border border-fc-line flex flex-col items-center justify-center gap-1 p-1 min-w-0 ${
                   isLastOdd ? 'col-span-2' : ''
                 }`}
               >
                 <Avatar nome={p.nome} foto={p.foto} size="w-9 h-9" textSize="text-[9px]" />
-                <span className="text-[9.5px] font-semibold text-fc-dark text-center leading-tight truncate w-full px-0.5">{p.nome}</span>
+                <span className="text-[9.5px] font-semibold text-fc-ink text-center leading-tight truncate w-full px-0.5">{p.nome}</span>
               </div>
             );
           })}
@@ -71,7 +71,7 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="rounded-xl bg-fc-cream border border-fc-line flex items-center justify-center text-[13px] font-bold text-fc-dark/60 active:scale-95 transition"
+              className="rounded-xl bg-fc-cream border border-fc-line flex items-center justify-center text-[13px] font-bold text-fc-ink/60 active:scale-95 transition"
             >
               +{extra}
             </button>
@@ -104,9 +104,9 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
 
   if (!player) {
     return (
-      <div className="bg-white rounded-2xl border border-fc-line shadow-card overflow-hidden flex flex-col">
+      <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden flex flex-col">
         <div className="aspect-[3/4] bg-fc-cream flex items-center justify-center">
-          <Icon name={badgeIcon} size={22} className="text-fc-dark/15" />
+          <Icon name={badgeIcon} size={22} className="text-fc-ink/15" />
         </div>
         <div className="p-2.5 text-center">
           <p className="text-[9.5px] font-bold text-fc-muted uppercase tracking-wide">{badgeLabel}</p>
@@ -117,7 +117,7 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-fc-line shadow-card overflow-hidden">
+    <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden">
       <div className="relative aspect-[3/4]">
         <GamePhoto nome={player.nome} fotoJogo={player.fotoJogo} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30" />
@@ -138,8 +138,8 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
       <div className="grid grid-cols-2 gap-1.5 p-2 text-[10px]">
         {stats.map((s) => (
           <div key={s.label} className="flex flex-col items-center justify-center bg-fc-cream rounded-lg px-1.5 py-1.5 text-center">
-            <span className="text-fc-dark/50 font-medium text-[8.5px] uppercase tracking-wide truncate w-full">{s.label}</span>
-            <span className="font-semibold text-fc-dark text-[11px] leading-tight">{s.value}</span>
+            <span className="text-fc-ink/50 font-medium text-[8.5px] uppercase tracking-wide truncate w-full">{s.label}</span>
+            <span className="font-semibold text-fc-ink text-[11px] leading-tight">{s.value}</span>
           </div>
         ))}
       </div>
