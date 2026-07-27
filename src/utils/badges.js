@@ -16,6 +16,25 @@ function isSameQuarter(isoDate, ref) {
   return d.getFullYear() === ref.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(ref.getMonth() / 3);
 }
 
+function quarterKey(isoDate) {
+  const d = new Date(isoDate);
+  return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+}
+
+function maxRunLength(sequence) {
+  let max = 0;
+  let run = 0;
+  sequence.forEach((val) => {
+    if (val) {
+      run++;
+      max = Math.max(max, run);
+    } else {
+      run = 0;
+    }
+  });
+  return max;
+}
+
 function buildPlayerMatchStats(matchHistory) {
   const sorted = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
   const stats = new Map();
@@ -118,15 +137,14 @@ function buildPlayedRunCounts(statsById, thresholds) {
   return counts;
 }
 
-function buildQuarterStats(matchHistory, now) {
-  const quarterMatches = matchHistory.filter((m) => isSameQuarter(m.date, now));
+function buildStatsList(matches) {
   const map = new Map();
   const ensure = (id, nome) => {
     if (!map.has(id)) map.set(id, { id, nome, gols: 0, assistencias: 0, presencas: 0, vitorias: 0 });
     return map.get(id);
   };
 
-  quarterMatches.forEach((m) => {
+  matches.forEach((m) => {
     m.teams.forEach((t) => {
       const vitorias = teamResultCount(m, t, 'vitorias');
       t.players.forEach((p) => {
@@ -142,14 +160,23 @@ function buildQuarterStats(matchHistory, now) {
     });
   });
 
-  return { list: [...map.values()], quarterMatchCount: quarterMatches.length };
+  return [...map.values()];
+}
+
+function buildQuarterStats(matchHistory, now) {
+  const quarterMatches = matchHistory.filter((m) => isSameQuarter(m.date, now));
+  return { list: buildStatsList(quarterMatches), quarterMatchCount: quarterMatches.length };
+}
+
+function leadersFor(quarterStatsList, statKey) {
+  const candidates = quarterStatsList.filter((s) => s[statKey] > 0);
+  if (candidates.length === 0) return [];
+  const max = Math.max(...candidates.map((s) => s[statKey]));
+  return candidates.filter((s) => s[statKey] === max);
 }
 
 function undisputedQuarterLeader(quarterStatsList, statKey) {
-  const candidates = quarterStatsList.filter((s) => s[statKey] > 0);
-  if (candidates.length === 0) return null;
-  const max = Math.max(...candidates.map((s) => s[statKey]));
-  const tied = candidates.filter((s) => s[statKey] === max);
+  const tied = leadersFor(quarterStatsList, statKey);
   return tied.length === 1 ? tied[0] : null;
 }
 
@@ -413,6 +440,93 @@ export function computeBadgesForPlayers(players, matchHistory, ratingHistory = [
 export function getTopBadge(badges) {
   if (!badges) return null;
   return badges.find((b) => b.achieved) || null;
+}
+
+function computeQuarterAwardsHistory(matchHistory) {
+  const byQuarter = new Map();
+  matchHistory.forEach((m) => {
+    const key = quarterKey(m.date);
+    if (!byQuarter.has(key)) byQuarter.set(key, []);
+    byQuarter.get(key).push(m);
+  });
+
+  const counts = new Map();
+  const ensure = (id) => {
+    if (!counts.has(id)) counts.set(id, { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 });
+    return counts.get(id);
+  };
+
+  byQuarter.forEach((matches) => {
+    const list = buildStatsList(matches);
+
+    leadersFor(list, 'vitorias').forEach((s) => { ensure(s.id).campeao += 1; });
+    leadersFor(list, 'gols').forEach((s) => { ensure(s.id).artilheiro += 1; });
+    leadersFor(list, 'assistencias').forEach((s) => { ensure(s.id).garcom += 1; });
+
+    if (matches.length >= MIN_QUARTER_MATCHES_FOR_ATTENDANCE) {
+      const withPct = list.filter((s) => s.presencas > 0).map((s) => ({ ...s, pct: Math.round((s.presencas / matches.length) * 100) }));
+      leadersFor(withPct, 'pct').forEach((s) => { ensure(s.id).sempre_presente += 1; });
+    }
+  });
+
+  counts.forEach((c) => {
+    c.total = c.campeao + c.artilheiro + c.garcom + c.sempre_presente;
+  });
+
+  return counts;
+}
+
+function bestPartnerFor(playerId, matchHistory) {
+  const counts = new Map();
+  matchHistory.forEach((m) => {
+    m.teams.forEach((t) => {
+      const inTeam = t.players.some((p) => p.id === playerId);
+      if (!inTeam) return;
+      t.players.forEach((p) => {
+        if (p.id === playerId) return;
+        const cur = counts.get(p.id) || { id: p.id, nome: p.nome, count: 0 };
+        cur.count += 1;
+        counts.set(p.id, cur);
+      });
+    });
+  });
+
+  let best = null;
+  counts.forEach((v) => {
+    if (!best || v.count > best.count) best = v;
+  });
+  return best;
+}
+
+export function computeProfileStats(playerId, matchHistory) {
+  const statsById = buildPlayerMatchStats(matchHistory);
+  const entry = statsById.get(playerId);
+  const matches = entry?.matches || [];
+
+  const totals = {
+    gols: matches.reduce((sum, m) => sum + m.gols, 0),
+    assistencias: matches.reduce((sum, m) => sum + m.assistencias, 0),
+    presencas: matches.length,
+    vitorias: matches.filter((m) => m.vitoria).length,
+  };
+
+  const maxGolsMatch = matches.length ? Math.max(0, ...matches.map((m) => m.gols)) : 0;
+  const maxDrySpell = maxRunLength(matches.map((m) => m.gols === 0));
+
+  const matchHistoryAsc = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const presenceSeq = matchHistoryAsc.map((m) => m.teams.some((t) => t.players.some((p) => p.id === playerId)));
+  const maxAttendanceStreak = maxRunLength(presenceSeq);
+
+  const partner = bestPartnerFor(playerId, matchHistory);
+  const awards = computeQuarterAwardsHistory(matchHistory).get(playerId) || {
+    campeao: 0,
+    artilheiro: 0,
+    garcom: 0,
+    sempre_presente: 0,
+    total: 0,
+  };
+
+  return { totals, maxGolsMatch, maxDrySpell, maxAttendanceStreak, partner, awards };
 }
 
 export function computeCareerTotals(matchHistory) {

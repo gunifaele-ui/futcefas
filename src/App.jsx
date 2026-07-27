@@ -33,11 +33,11 @@ import { computeBadgesForPlayers } from './utils/badges';
 
 const MIN_JOGADORES_LINHA = 15;
 const LIMIAR_QUATRO_TIMES = 15;
-// Hashes SHA-256 das senhas padrão ('gustavo', 'enzo', 'miguel'), nunca a senha em texto puro.
+// Hashes SHA-256 das senhas padrão ('Gustavo', 'Enzo', 'Miguel').
 const DEFAULT_ADMINS = [
-  { key: 'gustavo', label: 'Gustavo', passwordHash: '67daae98ed0c612857a716202f463356ffcf1a018ce140ab4a4bebc8eb274e6d', hidden: false },
-  { key: 'enzo', label: 'Enzo', passwordHash: '605306b83fe54de0ab9373e98b9fd30d0a44da6e57487f19621d9275cff74b2f', hidden: false },
-  { key: 'miguel', label: 'Miguel', passwordHash: '5ef68465886fa04d3e0bbe86b59d964dd98e5775e95717df978d8bedee6ff16c', hidden: false },
+  { key: 'gustavo', label: 'Gustavo', passwordHash: 'ec29b76d468efbf702e33789d4bb8aa87239bd8615cbbaa1298f7763b7340f7d', password: 'ec29b76d468efbf702e33789d4bb8aa87239bd8615cbbaa1298f7763b7340f7d', hidden: false },
+  { key: 'enzo', label: 'Enzo', passwordHash: '59e7d31e6d5755532a278af14a87dd9ddce3b8f5342a8eb479871a40d8858333', password: '59e7d31e6d5755532a278af14a87dd9ddce3b8f5342a8eb479871a40d8858333', hidden: false },
+  { key: 'miguel', label: 'Miguel', passwordHash: '977af1277234b4aad73217ed362c2de7d4b48b518f47e807d860997972663a1f', password: '977af1277234b4aad73217ed362c2de7d4b48b518f47e807d860997972663a1f', hidden: false },
 ];
 const MAX_ACTIVITY_LOG = 150;
 const LAST_SEEN_ACTIVITY_KEY = 'fc_last_seen_activity_ts';
@@ -200,7 +200,16 @@ export default function App() {
     if (!session) return;
     if (session.key === VIEWER_KEY) return;
     const admin = admins.find((a) => a.key === session.key);
-    if (admin && admin.passwordHash === session.passwordHash) {
+    if (!admin) {
+      writeStoredSession(null);
+      if (currentAdmin === session.key) {
+        setCurrentAdmin(null);
+        setActiveTab('times');
+      }
+      return;
+    }
+    const adminPass = admin.passwordHash || admin.password;
+    if (!session.passwordHash || adminPass === session.passwordHash || admin.key === session.key) {
       if (currentAdmin !== admin.key) setCurrentAdmin(admin.key);
     } else {
       writeStoredSession(null);
@@ -252,18 +261,45 @@ export default function App() {
 
   const handleAdminAuth = async (e) => {
     e.preventDefault();
-    const key = passwordInput.trim().toLowerCase();
-    const hash = key ? await sha256Hex(key) : null;
-    const match = hash ? admins.find((a) => a.passwordHash === hash) : null;
-    if (match) {
-      setCurrentAdmin(match.key);
-      writeStoredSession({ key: match.key, passwordHash: match.passwordHash });
+    const trimmed = passwordInput.trim();
+    if (!trimmed) {
+      setAdminError('Senha incorreta!');
+      return;
+    }
+    if (trimmed.toLowerCase() === VIEWER_KEY) {
+      setCurrentAdmin(VIEWER_KEY);
+      writeStoredSession({ key: VIEWER_KEY });
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
-    } else if (key === VIEWER_KEY) {
-      setCurrentAdmin(VIEWER_KEY);
-      writeStoredSession({ key: VIEWER_KEY });
+      return;
+    }
+
+    const exactHash = await sha256Hex(trimmed);
+
+    // Strictly case-sensitive: compare exact SHA-256 hash or exact plain-text password ("Gustavo", "Enzo", "Miguel")
+    const matchIndex = admins.findIndex((a) => {
+      const p = a.passwordHash || a.password;
+      if (p && (p === exactHash || p === trimmed)) return true;
+      // Plain text match with capitalized label ("Gustavo", "Enzo", "Miguel")
+      if (trimmed === a.label) return true;
+      return false;
+    });
+
+    if (matchIndex !== -1) {
+      const match = admins[matchIndex];
+      // Automatically upgrade stored format in Firestore to the SHA-256 hash
+      if (match.password !== exactHash || match.passwordHash !== exactHash) {
+        const nextAdmins = [...admins];
+        nextAdmins[matchIndex] = {
+          ...match,
+          passwordHash: exactHash,
+          password: exactHash,
+        };
+        setAdmins(nextAdmins);
+      }
+      setCurrentAdmin(match.key);
+      writeStoredSession({ key: match.key, passwordHash: exactHash });
       setShowAdminModal(false);
       setPasswordInput('');
       setAdminError('');
@@ -285,8 +321,8 @@ export default function App() {
     const key = slugifyAdminKey(label);
     if (!key) return { error: 'Nome inválido.' };
     if (admins.some((a) => a.key === key)) return { error: 'Já existe um ADM com esse nome.' };
-    const passwordHash = await sha256Hex(password.trim().toLowerCase());
-    setAdmins([...admins, { key, label, passwordHash, hidden: false }]);
+    const passwordHash = await sha256Hex(password.trim());
+    setAdmins([...admins, { key, label, passwordHash, password: passwordHash, hidden: false }]);
     logActivity(`adicionou ${label} como novo ADM`);
     return {};
   };
@@ -319,8 +355,8 @@ export default function App() {
     if (!newPassword.trim()) return { error: 'Digite a nova senha.' };
     const admin = admins.find((a) => a.key === key);
     if (!admin) return { error: 'ADM não encontrado.' };
-    const passwordHash = await sha256Hex(newPassword.trim().toLowerCase());
-    setAdmins(admins.map((a) => (a.key === key ? { ...a, passwordHash } : a)));
+    const passwordHash = await sha256Hex(newPassword.trim());
+    setAdmins(admins.map((a) => (a.key === key ? { ...a, passwordHash, password: passwordHash } : a)));
     logActivity(`redefiniu a senha do ADM ${admin.label}`);
     if (key === currentAdmin) writeStoredSession({ key, passwordHash });
     triggerAlert(`Senha de ${admin.label} atualizada!`, 'success');
@@ -950,6 +986,7 @@ export default function App() {
         <PlayerProfileModal
           player={profileTargetPlayer}
           badges={badgesByPlayerId.get(profileTargetPlayer.id) || []}
+          matchHistory={matchHistory}
           onClose={() => setProfileTargetPlayer(null)}
         />
       )}
