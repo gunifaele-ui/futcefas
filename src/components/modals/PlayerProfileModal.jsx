@@ -44,16 +44,23 @@ const AWARD_ICONS = {
 export default function PlayerProfileModal({ player, badges = [], matchHistory = [], onClose }) {
   const [openBadgeId, setOpenBadgeId] = useState(null);
 
-  if (!player) return null;
+  // All hooks must run unconditionally — early return is AFTER all hooks
+  const safePlayer = player || {};
+  const isGoleiro = safePlayer.posicaoFixa === 'Goleiro';
 
-  const isGoleiro = player.posicaoFixa === 'Goleiro';
-  const achievedBadges = useMemo(() => (Array.isArray(badges) ? badges.filter((b) => b?.achieved && b?.id !== 'estreante') : []), [badges]);
-  const topBadge = getTopBadge(badges);
-  const openBadge = achievedBadges.find((b) => b?.id === openBadgeId) || null;
+  const achievedBadges = useMemo(
+    () => (Array.isArray(badges) ? badges.filter((b) => b?.achieved && b?.id !== 'estreante') : []),
+    [badges]
+  );
+  const topBadge = useMemo(() => getTopBadge(badges), [badges]);
+  const openBadge = useMemo(
+    () => achievedBadges.find((b) => b?.id === openBadgeId) || null,
+    [achievedBadges, openBadgeId]
+  );
 
   const stats = useMemo(
-    () => computeProfileStats(player.id, matchHistory || [], isGoleiro),
-    [player.id, matchHistory, isGoleiro]
+    () => safePlayer.id ? computeProfileStats(safePlayer.id, matchHistory || [], isGoleiro) : null,
+    [safePlayer.id, matchHistory, isGoleiro]
   );
 
   const safeStats = stats || {
@@ -65,12 +72,15 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
     awards: { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 },
   };
 
-  const awardEntries = [
+  const awardEntries = useMemo(() => [
     { key: 'campeao', label: 'Campeão do trimestre', count: safeStats.awards?.campeao || 0 },
     { key: 'artilheiro', label: 'Artilheiro do trimestre', count: safeStats.awards?.artilheiro || 0 },
     { key: 'garcom', label: 'Garçom do trimestre', count: safeStats.awards?.garcom || 0 },
     { key: 'sempre_presente', label: 'Sempre presente', count: safeStats.awards?.sempre_presente || 0 },
-  ].filter((a) => a.count > 0);
+  ].filter((a) => a.count > 0), [safeStats]);
+
+  // Early return AFTER all hooks
+  if (!player) return null;
 
   return (
     <BottomSheet onClose={onClose}>

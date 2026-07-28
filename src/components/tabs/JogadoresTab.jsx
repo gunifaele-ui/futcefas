@@ -4,15 +4,15 @@ import Icon from '../Icon';
 import { getTopBadge, computeCareerTotals } from '../../utils/badges';
 
 const SORT_OPTIONS = [
-  { key: 'nome', label: 'Nome' },
   { key: 'gols', label: 'Gols' },
   { key: 'assistencias', label: 'Assist.' },
   { key: 'vitorias', label: 'Vitórias' },
   { key: 'presencas', label: 'Presenças' },
+  { key: 'nome', label: 'Nome' },
 ];
 
 export default function JogadoresTab({ players, matchHistory, badgesByPlayerId, onOpenProfile }) {
-  const [sortMode, setSortMode] = useState('nome');
+  const [sortMode, setSortMode] = useState('gols');
 
   const totalsById = useMemo(() => computeCareerTotals(matchHistory), [matchHistory]);
 
