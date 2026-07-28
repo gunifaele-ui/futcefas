@@ -686,14 +686,16 @@ export default function EstatisticasTab({
                           />
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {t.players.map((p) => {
+                          {t.players.map((raw, pIdx) => {
+                            const p = resolvePlayer(raw, players);
+                            if (!p) return null;
                             const goalEntry = m.goals.find((g) => g.playerId === p.id);
                             const gols = goalEntry?.gols || 0;
                             const assistencias = goalEntry?.assistencias || 0;
 
                             return (
                               <PlayerStatTrigger
-                                key={p.id}
+                                key={p.id || pIdx}
                                 canEdit={matchCanEditStats}
                                 gols={gols}
                                 assistencias={assistencias}

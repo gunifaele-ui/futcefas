@@ -1079,7 +1079,7 @@ export default function App() {
         <PlayerProfileModal
           player={profileTargetPlayer}
           badges={badgesByPlayerId?.get(profileTargetPlayer.id) || []}
-          matchHistory={effectiveMatchHistory}
+          matchHistory={safeMatchHistory}
           onClose={() => setProfileTargetPlayer(null)}
         />
       )}
