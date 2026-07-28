@@ -3,6 +3,7 @@
   "short_name": "FutCefas",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#1E2E28",
   "theme_color": "#1E2E28",
   "icons": [

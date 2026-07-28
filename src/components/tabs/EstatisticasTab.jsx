@@ -435,7 +435,7 @@ export default function EstatisticasTab({
         <span className="ml-auto text-[10.5px] font-medium text-fc-muted">{currentQuarterLabel(new Date())}</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
         <PlayerSpotlightCard
           badgeIcon="ball"
           badgeLabel="Artilheiro"
@@ -460,7 +460,7 @@ export default function EstatisticasTab({
         />
 
         {/* Card do Histórico Recente no Desktop */}
-        <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between col-span-1 sm:col-span-2 lg:col-span-1">
+        <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between col-span-2 lg:col-span-1">
           <div>
             <div className="flex items-center justify-between mb-2.5 gap-2">
               <h3 className="text-[12.5px] font-bold text-fc-ink flex items-center gap-1.5">
