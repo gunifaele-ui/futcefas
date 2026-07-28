@@ -6,25 +6,30 @@ const EM_ALTA_MAX_DAYS = 45;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function teamResultCount(match, team, type) {
+  if (!team || !match) return 0;
   if (typeof team[type] === 'number') return team[type];
-  if (type === 'vitorias' && match.winners?.includes(team.id)) return 1;
+  if (type === 'vitorias' && Array.isArray(match.winners) && match.winners.includes(team.id)) return 1;
   return 0;
 }
 
 function isSameQuarter(isoDate, ref) {
+  if (!isoDate || !ref) return false;
   const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return false;
   return d.getFullYear() === ref.getFullYear() && Math.floor(d.getMonth() / 3) === Math.floor(ref.getMonth() / 3);
 }
 
 function quarterKey(isoDate) {
+  if (!isoDate) return 'unknown';
   const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return 'unknown';
   return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
 }
 
 function maxRunLength(sequence) {
   let max = 0;
   let run = 0;
-  sequence.forEach((val) => {
+  (sequence || []).forEach((val) => {
     if (val) {
       run++;
       max = Math.max(max, run);
@@ -35,8 +40,16 @@ function maxRunLength(sequence) {
   return max;
 }
 
+function getPlayerIdAndName(p) {
+  if (!p) return { id: null, nome: 'Jogador' };
+  if (typeof p === 'object') {
+    return { id: p.id || null, nome: p.nome || p.playerName || 'Jogador' };
+  }
+  return { id: String(p), nome: 'Jogador' };
+}
+
 function buildPlayerMatchStats(matchHistory = []) {
-  const sorted = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sorted = [...(matchHistory || [])].sort((a, b) => new Date(a?.date || 0) - new Date(b?.date || 0));
   const stats = new Map();
   const ensure = (id, nome) => {
     if (!stats.has(id)) stats.set(id, { id, nome, matches: [] });
@@ -52,9 +65,10 @@ function buildPlayerMatchStats(matchHistory = []) {
       const teamWon = teamResultCount(m, t, 'vitorias') > 0;
       const players = Array.isArray(t.players) ? t.players : [];
       players.forEach((p) => {
-        if (!p || !p.id) return;
-        const entry = ensure(p.id, p.nome);
-        const goal = goals.find((g) => g && g.playerId === p.id);
+        const { id: pId, nome: pNome } = getPlayerIdAndName(p);
+        if (!pId) return;
+        const entry = ensure(pId, pNome);
+        const goal = goals.find((g) => g && g.playerId === pId);
         entry.matches.push({
           date: m.date,
           gols: goal?.gols || 0,
@@ -70,10 +84,10 @@ function buildPlayerMatchStats(matchHistory = []) {
 
 function currentStreak(playerId, matchHistoryDesc = []) {
   let streak = 0;
-  for (const m of matchHistoryDesc) {
+  for (const m of (matchHistoryDesc || [])) {
     if (!m) continue;
     const teams = Array.isArray(m.teams) ? m.teams : [];
-    const played = teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === playerId));
+    const played = teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => getPlayerIdAndName(p).id === playerId));
     if (played) streak++;
     else break;
   }
@@ -83,7 +97,7 @@ function currentStreak(playerId, matchHistoryDesc = []) {
 function maxWinStreak(matches = []) {
   let max = 0;
   let cur = 0;
-  matches.forEach((m) => {
+  (matches || []).forEach((m) => {
     if (m?.vitoria) {
       cur++;
       max = Math.max(max, cur);
@@ -96,19 +110,17 @@ function maxWinStreak(matches = []) {
 
 function currentDrySpell(matchesDesc = []) {
   let streak = 0;
-  for (const m of matchesDesc) {
+  for (const m of (matchesDesc || [])) {
     if (m?.gols === 0) streak++;
     else break;
   }
   return streak;
 }
 
-// Conta quantas sequências (runs) separadas de `true` bateram o tamanho mínimo —
-// ex: [T,T,T,F,T,T,T,T,T] com threshold 3 dá 2 (uma run de 3, uma de 5).
 function countQualifyingRuns(sequence, threshold) {
   let count = 0;
   let run = 0;
-  sequence.forEach((val) => {
+  (sequence || []).forEach((val) => {
     if (val) {
       run++;
     } else {
@@ -122,11 +134,11 @@ function countQualifyingRuns(sequence, threshold) {
 
 function buildAttendanceRunCounts(playerIds = [], matchHistoryAsc = [], thresholds) {
   const counts = new Map();
-  playerIds.forEach((id) => {
-    const seq = matchHistoryAsc.map((m) => {
+  (playerIds || []).forEach((id) => {
+    const seq = (matchHistoryAsc || []).map((m) => {
       if (!m) return false;
       const teams = Array.isArray(m.teams) ? m.teams : [];
-      return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === id));
+      return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => getPlayerIdAndName(p).id === id));
     });
     counts.set(id, {
       ferro: countQualifyingRuns(seq, thresholds.ferro),
@@ -138,8 +150,8 @@ function buildAttendanceRunCounts(playerIds = [], matchHistoryAsc = [], threshol
 
 function buildPlayedRunCounts(statsById, thresholds) {
   const counts = new Map();
-  statsById.forEach((entry, id) => {
-    const matches = Array.isArray(entry.matches) ? entry.matches : [];
+  (statsById || new Map()).forEach((entry, id) => {
+    const matches = Array.isArray(entry?.matches) ? entry.matches : [];
     const winSeq = matches.map((m) => m.vitoria);
     const drySeq = matches.map((m) => m.gols === 0);
     counts.set(id, {
@@ -166,8 +178,9 @@ function buildStatsList(matches = []) {
       const vitorias = teamResultCount(m, t, 'vitorias');
       const players = Array.isArray(t.players) ? t.players : [];
       players.forEach((p) => {
-        if (!p || !p.id) return;
-        const entry = ensure(p.id, p.nome);
+        const { id: pId, nome: pNome } = getPlayerIdAndName(p);
+        if (!pId) return;
+        const entry = ensure(pId, pNome);
         entry.presencas += 1;
         entry.vitorias += vitorias;
       });
@@ -207,10 +220,10 @@ function topPair(matchHistory = []) {
     const teams = Array.isArray(m.teams) ? m.teams : [];
     teams.forEach((t) => {
       if (!t) return;
-      const roster = (t.players || []).filter((p) => p && p.id);
+      const roster = (t.players || []).map((p) => getPlayerIdAndName(p).id).filter(Boolean);
       for (let i = 0; i < roster.length; i++) {
         for (let j = i + 1; j < roster.length; j++) {
-          const key = [roster[i].id, roster[j].id].sort().join('::');
+          const key = [roster[i], roster[j]].sort().join('::');
           pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
         }
       }
@@ -235,18 +248,18 @@ function ratingImprovement(playerId, ratingHistory = [], currentNota) {
   const now = Date.now();
   const minTime = now - EM_ALTA_MAX_DAYS * DAY_MS;
   const maxTime = now - EM_ALTA_MIN_DAYS * DAY_MS;
-  const candidates = ratingHistory
-    .filter((r) => r.playerId === playerId)
+  const candidates = (ratingHistory || [])
+    .filter((r) => r && r.playerId === playerId)
     .filter((r) => {
+      if (!r || !r.date) return false;
       const t = new Date(r.date).getTime();
-      return t >= minTime && t <= maxTime;
+      return !isNaN(t) && t >= minTime && t <= maxTime;
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
   if (candidates.length === 0) return null;
   return currentNota - candidates[0].notaMedia;
 }
 
-// Ordem = prioridade pro selo exibido no avatar (troféus/raridade primeiro).
 export const BADGE_DEFINITIONS = [
   {
     id: 'campeao_trimestre',
@@ -287,8 +300,8 @@ export const BADGE_DEFINITIONS = [
     label: 'Sequência de Titânio',
     description: '20 peladas seguidas sem faltar.',
     compute: (ctx, player) => {
-      const current = ctx.streaks.get(player.id) || 0;
-      const count = ctx.attendanceRunCounts.get(player.id)?.titanio || 0;
+      const current = ctx.streaks?.get(player.id) || 0;
+      const count = ctx.attendanceRunCounts?.get(player.id)?.titanio || 0;
       return { achieved: count > 0, count, detail: `${current} seguidas agora` };
     },
   },
@@ -298,7 +311,7 @@ export const BADGE_DEFINITIONS = [
     label: 'Veterano',
     description: '50 peladas jogadas.',
     compute: (ctx, player) => {
-      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      const total = ctx.statsById?.get(player.id)?.matches?.length || 0;
       return { achieved: total >= 50, detail: `${total} peladas` };
     },
   },
@@ -398,45 +411,46 @@ export const BADGE_DEFINITIONS = [
     label: 'Seca',
     description: '3 ou mais peladas seguidas sem marcar gol.',
     compute: (ctx, player) => {
-      if (player.posicaoFixa === 'Goleiro') return { achieved: false, count: 0, detail: null };
-      const s = ctx.statsById?.get(player.id);
+      if (player?.posicaoFixa === 'Goleiro') return { achieved: false, count: 0, detail: null };
+      const s = ctx.statsById?.get(player?.id);
       const matches = Array.isArray(s?.matches) ? s.matches : [];
       if (matches.length === 0) return { achieved: false, count: 0, detail: null };
       const current = currentDrySpell([...matches].reverse());
-      const count = ctx.playedRunCounts?.get(player.id)?.seca || 0;
+      const count = ctx.playedRunCounts?.get(player?.id)?.seca || 0;
       return { achieved: count > 0, count, detail: current >= 3 ? `${current} sem gol agora` : null };
     },
   },
 ];
 
-export function computeBadgesForPlayers(players, matchHistory, ratingHistory = []) {
-  const now = new Date();
-  const statsById = buildPlayerMatchStats(matchHistory);
-  const matchHistoryDesc = [...matchHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+export function computeBadgesForPlayers(players = [], matchHistory = [], ratingHistory = [], now = new Date()) {
+  const safePlayers = Array.isArray(players) ? players : [];
+  const safeHistory = Array.isArray(matchHistory) ? matchHistory : [];
+  const safeRatingHistory = Array.isArray(ratingHistory) ? ratingHistory : [];
 
+  const statsById = buildPlayerMatchStats(safeHistory);
+  const matchHistoryDesc = [...safeHistory].sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+  const matchHistoryAsc = [...safeHistory].sort((a, b) => new Date(a?.date || 0) - new Date(b?.date || 0));
+
+  const playerIds = safePlayers.map((p) => (typeof p === 'object' ? p?.id : p)).filter(Boolean);
   const streaks = new Map();
-  statsById.forEach((_, id) => streaks.set(id, currentStreak(id, matchHistoryDesc)));
+  playerIds.forEach((id) => streaks.set(id, currentStreak(id, matchHistoryDesc)));
 
-  const { list: quarterStats, quarterMatchCount } = buildQuarterStats(matchHistory, now);
-  const quarterArtilheiro = undisputedQuarterLeader(quarterStats, 'gols');
-  const quarterGarcom = undisputedQuarterLeader(quarterStats, 'assistencias');
-  const quarterCampeao = undisputedQuarterLeader(quarterStats, 'vitorias');
+  const { list: quarterStatsList } = buildQuarterStats(safeHistory, now);
+  const quarterArtilheiro = undisputedQuarterLeader(quarterStatsList, 'gols');
+  const quarterGarcom = undisputedQuarterLeader(quarterStatsList, 'garcom');
+  const quarterCampeao = undisputedQuarterLeader(quarterStatsList, 'vitorias');
 
-  const quarterAttendanceLeader = (() => {
-    if (quarterMatchCount < MIN_QUARTER_MATCHES_FOR_ATTENDANCE) return null;
-    const withPct = quarterStats
-      .filter((s) => s.presencas > 0)
-      .map((s) => ({ ...s, pct: Math.round((s.presencas / quarterMatchCount) * 100) }));
-    if (withPct.length === 0) return null;
-    const max = Math.max(...withPct.map((s) => s.pct));
-    const tied = withPct.filter((s) => s.pct === max);
-    return tied.length === 1 ? tied[0] : null;
-  })();
+  let quarterAttendanceLeader = null;
+  const quarterMatchesCount = (safeHistory || []).filter((m) => m && isSameQuarter(m.date, now)).length;
+  if (quarterMatchesCount >= MIN_QUARTER_MATCHES_FOR_ATTENDANCE) {
+    const withPct = (quarterStatsList || [])
+      .filter((s) => s && s.presencas > 0)
+      .map((s) => ({ ...s, pct: Math.round((s.presencas / quarterMatchesCount) * 100) }));
+    quarterAttendanceLeader = undisputedQuarterLeader(withPct, 'pct');
+  }
 
-  const pair = topPair(matchHistory);
-
-  const matchHistoryAsc = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const attendanceRunCounts = buildAttendanceRunCounts([...statsById.keys()], matchHistoryAsc, { ferro: 5, titanio: 20 });
+  const pair = topPair(safeHistory);
+  const attendanceRunCounts = buildAttendanceRunCounts(playerIds, matchHistoryAsc, { ferro: 5, titanio: 20 });
   const playedRunCounts = buildPlayedRunCounts(statsById, { trator: 3, seca: 3 });
 
   const ctx = {
@@ -447,16 +461,22 @@ export function computeBadgesForPlayers(players, matchHistory, ratingHistory = [
     quarterCampeao,
     quarterAttendanceLeader,
     pair,
-    ratingHistory,
+    ratingHistory: safeRatingHistory,
     attendanceRunCounts,
     playedRunCounts,
   };
 
   const result = new Map();
-  players.forEach((player) => {
+  safePlayers.forEach((player) => {
+    if (!player || !player.id) return;
     const badges = BADGE_DEFINITIONS.map((def) => {
-      const { achieved, count, detail } = def.compute(ctx, player);
-      return { id: def.id, icon: def.icon, label: def.label, description: def.description, achieved, count, detail };
+      try {
+        const { achieved, count, detail } = def.compute(ctx, player);
+        return { id: def.id, icon: def.icon, label: def.label, description: def.description, achieved: !!achieved, count: count || 0, detail: detail || null };
+      } catch (err) {
+        console.error(`Error computing badge ${def.id} for player ${player.id}:`, err);
+        return { id: def.id, icon: def.icon, label: def.label, description: def.description, achieved: false, count: 0, detail: null };
+      }
     });
     result.set(player.id, badges);
   });
@@ -472,21 +492,22 @@ function computeQuarterAwardsHistory(matchHistory = []) {
   const byQuarter = new Map();
   (matchHistory || []).forEach((m) => {
     if (!m || !m.date) return;
-    const key = quarterKey(m.date);
-    if (!byQuarter.has(key)) byQuarter.set(key, []);
-    byQuarter.get(key).push(m);
+    const qKey = quarterKey(m.date);
+    if (qKey === 'unknown') return;
+    if (!byQuarter.has(qKey)) byQuarter.set(qKey, []);
+    byQuarter.get(qKey).push(m);
   });
 
   const counts = new Map();
   const ensure = (id) => {
-    if (!id) return { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 };
-    if (!counts.has(id)) counts.set(id, { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 });
+    if (!counts.has(id)) {
+      counts.set(id, { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 });
+    }
     return counts.get(id);
   };
 
-  byQuarter.forEach((matches) => {
+  byQuarter.forEach((matches, qKey) => {
     const list = buildStatsList(matches);
-
     leadersFor(list, 'vitorias').forEach((s) => { if (s?.id) ensure(s.id).campeao += 1; });
     leadersFor(list, 'gols').forEach((s) => { if (s?.id) ensure(s.id).artilheiro += 1; });
     leadersFor(list, 'assistencias').forEach((s) => { if (s?.id) ensure(s.id).garcom += 1; });
@@ -512,13 +533,14 @@ function bestPartnerFor(playerId, matchHistory = []) {
     teams.forEach((t) => {
       if (!t) return;
       const players = Array.isArray(t.players) ? t.players.filter(Boolean) : [];
-      const inTeam = players.some((p) => p.id === playerId);
+      const inTeam = players.some((p) => getPlayerIdAndName(p).id === playerId);
       if (!inTeam) return;
       players.forEach((p) => {
-        if (!p || !p.id || p.id === playerId) return;
-        const cur = counts.get(p.id) || { id: p.id, nome: p.nome, count: 0 };
+        const { id: pId, nome: pNome } = getPlayerIdAndName(p);
+        if (!pId || pId === playerId) return;
+        const cur = counts.get(pId) || { id: pId, nome: pNome, count: 0 };
         cur.count += 1;
-        counts.set(p.id, cur);
+        counts.set(pId, cur);
       });
     });
   });
@@ -553,7 +575,7 @@ export function computeProfileStats(playerId, matchHistory = [], isGoleiro = fal
   const presenceSeq = matchHistoryAsc.map((m) => {
     if (!m) return false;
     const teams = Array.isArray(m.teams) ? m.teams : [];
-    return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === playerId));
+    return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => getPlayerIdAndName(p).id === playerId));
   });
   const maxAttendanceStreak = maxRunLength(presenceSeq);
 
@@ -566,21 +588,46 @@ export function computeProfileStats(playerId, matchHistory = [], isGoleiro = fal
     total: 0,
   };
 
-  return { totals, maxGolsMatch, maxDrySpell, maxAttendanceStreak, partner, awards };
+  return {
+    totals,
+    maxGolsMatch,
+    maxDrySpell,
+    maxAttendanceStreak,
+    partner,
+    awards,
+  };
 }
 
 export function computeCareerTotals(matchHistory = []) {
-  const safeHistory = Array.isArray(matchHistory) ? matchHistory : [];
-  const statsById = buildPlayerMatchStats(safeHistory);
-  const totals = new Map();
-  statsById.forEach((entry, id) => {
-    const matches = Array.isArray(entry?.matches) ? entry.matches : [];
-    totals.set(id, {
-      gols: matches.reduce((sum, m) => sum + (m?.gols || 0), 0),
-      assistencias: matches.reduce((sum, m) => sum + (m?.assistencias || 0), 0),
-      presencas: matches.length,
-      vitorias: matches.filter((m) => m?.vitoria).length,
+  const map = new Map();
+  const ensure = (id) => {
+    if (!map.has(id)) map.set(id, { gols: 0, assistencias: 0, presencas: 0, vitorias: 0 });
+    return map.get(id);
+  };
+
+  (matchHistory || []).forEach((m) => {
+    if (!m) return;
+    const goals = Array.isArray(m.goals) ? m.goals : [];
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    teams.forEach((t) => {
+      if (!t) return;
+      const vitorias = teamResultCount(m, t, 'vitorias');
+      const players = Array.isArray(t.players) ? t.players : [];
+      players.forEach((p) => {
+        const { id: pId } = getPlayerIdAndName(p);
+        if (!pId) return;
+        const entry = ensure(pId);
+        entry.presencas += 1;
+        entry.vitorias += vitorias;
+      });
+    });
+    goals.forEach((g) => {
+      if (!g || !g.playerId) return;
+      const entry = ensure(g.playerId);
+      entry.gols += g.gols || 0;
+      entry.assistencias += g.assistencias || 0;
     });
   });
-  return totals;
+
+  return map;
 }
