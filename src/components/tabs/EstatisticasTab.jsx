@@ -404,7 +404,7 @@ export default function EstatisticasTab({
         <span className="ml-auto text-[10.5px] font-medium text-fc-muted">{currentQuarterLabel(new Date())}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 md:inline-grid md:[grid-template-columns:repeat(2,180px)] md:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
         <PlayerSpotlightCard
           badgeIcon="ball"
           badgeLabel="Artilheiro"
@@ -427,6 +427,78 @@ export default function EstatisticasTab({
           mainUnit={topAssistQuarter?.stat.assistencias === 1 ? 'assist.' : 'assists.'}
           stats={topAssistQuarter && topAssistQuarter.tied.length === 1 ? buildSpotlightStats(topAssistQuarter.stat, 'Gols', topAssistQuarter.stat.gols) : []}
         />
+
+        {/* Card do Histórico Recente no Desktop */}
+        <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between col-span-1 sm:col-span-2 lg:col-span-1">
+          <div>
+            <div className="flex items-center justify-between mb-2.5 gap-2">
+              <h3 className="text-[12.5px] font-bold text-fc-ink flex items-center gap-1.5">
+                <Icon name="calendar" size={14} className="text-fc-lime/80" /> Histórico Recente
+              </h3>
+              <span className="text-[10px] font-bold bg-fc-cream text-fc-ink/70 px-2 py-0.5 rounded-full border border-fc-line/50">
+                {matchHistory.length} {matchHistory.length === 1 ? 'pelada' : 'peladas'}
+              </span>
+            </div>
+
+            {matchHistory.length === 0 ? (
+              <EmptyState>Nenhum sorteio registrado ainda.</EmptyState>
+            ) : (
+              <div className="space-y-2 max-h-[285px] overflow-y-auto pr-0.5">
+                {matchHistory.map((m) => {
+                  const formattedMatchDate = m.date
+                    ? new Date(m.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                    : 'S/ Data';
+                  const totalGols = (m.goals || []).reduce((sum, g) => sum + (g?.gols || 0), 0);
+
+                  return (
+                    <div
+                      key={m.id}
+                      className="bg-fc-cream/60 hover:bg-fc-cream p-2.5 rounded-xl border border-fc-line/60 flex items-center justify-between gap-2 transition"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-[12px] font-bold text-fc-ink">{formattedMatchDate}</span>
+                          {m.finalizado ? (
+                            <span className="text-[9px] font-extrabold bg-fc-limesoft text-fc-ink px-1.5 py-0.5 rounded-md border border-fc-lime/30">
+                              Finalizado
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-extrabold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-md border border-amber-300">
+                              Em aberto
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10.5px] text-fc-muted font-medium truncate">
+                          {m.teams?.length || 0} times • {totalGols} {totalGols === 1 ? 'gol' : 'gols'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSummaryMatch(m)}
+                          className="text-[10.5px] font-bold text-fc-ink bg-fc-surface hover:bg-fc-limesoft border border-fc-line px-2 py-1 rounded-lg transition active:scale-95 flex items-center gap-1 shadow-2xs"
+                        >
+                          📊 Resumo
+                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onRequestDeleteMatch(m.id)}
+                            className="w-6 h-6 rounded-md hover:bg-orange-100 text-fc-muted hover:text-fc-coraldark flex items-center justify-center transition"
+                            title="Excluir pelada"
+                          >
+                            <Icon name="trash" size={11} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 px-1">
