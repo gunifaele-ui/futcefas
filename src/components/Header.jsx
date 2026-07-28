@@ -17,10 +17,9 @@ export default function Header({
 
   return (
     <header
-      className="sticky top-0 bg-fc-dark text-white pb-3.5 px-3.5 flex flex-col items-center justify-between z-40 shadow-nav overflow-hidden"
-      style={{ paddingTop: 'calc(0.875rem + env(safe-area-inset-top, 0px))' }}
+      className="sticky top-0 bg-fc-dark text-white pb-3 px-3.5 flex flex-col items-center justify-between z-40 border-b border-white/5 shadow-xs"
+      style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
     >
-      <div className="absolute top-4 -right-10 w-40 h-40 bg-fc-lime/10 rounded-full blur-3xl pointer-events-none" />
       <div className="flex items-center w-full max-w-md md:max-w-6xl gap-1.5">
         <div className="flex-1 min-w-0 flex items-center gap-1.5">
           {isAdmin && !isViewerRole && (
