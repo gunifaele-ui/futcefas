@@ -243,21 +243,32 @@ function topPair(matchHistory = []) {
   return { ids: bestKey.split('::'), count: bestCount };
 }
 
-function ratingImprovement(playerId, ratingHistory = [], currentNota) {
+function getLastRatingDiff(playerId, ratingHistory = [], currentNota) {
   if (currentNota == null) return null;
-  const now = Date.now();
-  const minTime = now - EM_ALTA_MAX_DAYS * DAY_MS;
-  const maxTime = now - EM_ALTA_MIN_DAYS * DAY_MS;
-  const candidates = (ratingHistory || [])
-    .filter((r) => r && r.playerId === playerId)
-    .filter((r) => {
-      if (!r || !r.date) return false;
-      const t = new Date(r.date).getTime();
-      return !isNaN(t) && t >= minTime && t <= maxTime;
-    })
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-  if (candidates.length === 0) return null;
-  return currentNota - candidates[0].notaMedia;
+
+  const playerHistory = (ratingHistory || [])
+    .filter((r) => r && getPlayerIdAndName(r).id === playerId && typeof r.notaMedia === 'number')
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  if (playerHistory.length === 0) return null;
+
+  const latest = playerHistory[0];
+  let previous = null;
+
+  if (Math.abs(latest.notaMedia - currentNota) < 0.001) {
+    previous = playerHistory[1] || null;
+  } else {
+    previous = latest;
+  }
+
+  if (!previous || typeof previous.notaMedia !== 'number') return null;
+
+  const diff = currentNota - previous.notaMedia;
+  return {
+    diff: Number(diff.toFixed(2)),
+    prevNota: previous.notaMedia,
+    currentNota,
+  };
 }
 
 export const BADGE_DEFINITIONS = [
@@ -377,12 +388,15 @@ export const BADGE_DEFINITIONS = [
   {
     id: 'em_alta',
     icon: '📈',
-    label: 'Em Alta',
-    description: 'Nota subiu no último mês.',
+    label: 'Evolução de Nota',
+    description: 'Nota subiu em relação ao futebol anterior.',
     compute: (ctx, player) => {
-      const diff = ratingImprovement(player.id, ctx.ratingHistory || [], player.notaMedia);
-      const achieved = diff != null && diff >= EM_ALTA_THRESHOLD;
-      return { achieved, detail: achieved ? `+${diff.toFixed(1)} no mês` : null };
+      const info = getLastRatingDiff(player.id, ctx.ratingHistory || [], player.notaMedia);
+      const achieved = info != null && info.diff > 0;
+      return {
+        achieved,
+        detail: achieved ? `+${info.diff} (${info.prevNota.toFixed(2)} ➔ ${info.currentNota.toFixed(2)})` : null,
+      };
     },
   },
   {

@@ -118,6 +118,9 @@ export default function NotasTab({
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];
+            const playerBadges = badgesByPlayerId?.get(p.id) || [];
+            const hasEvolucao = playerBadges.some((b) => b.id === 'em_alta' && b.achieved);
+
             return (
               <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
                 <button
@@ -137,9 +140,16 @@ export default function NotasTab({
                   </span>
                 </button>
                 {!isGoleiro && (
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
-                    {p.notaMedia.toFixed(2)}
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {hasEvolucao && (
+                      <span title="Evolução de Nota! Subiu em relação ao futebol anterior." className="text-[13px] leading-none shrink-0">
+                        📈
+                      </span>
+                    )}
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
+                      {p.notaMedia.toFixed(2)}
+                    </span>
+                  </div>
                 )}
                 {!isViewer && (
                   <select
