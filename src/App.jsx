@@ -23,6 +23,7 @@ import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal';
 import ActivityLogModal from './components/modals/ActivityLogModal';
 import SettingsModal from './components/modals/SettingsModal';
 import ConfirmActionModal from './components/modals/ConfirmActionModal';
+import PullToRefresh from './components/PullToRefresh';
 import EstatisticasTab from './components/tabs/EstatisticasTab';
 import PlayerProfileModal from './components/modals/PlayerProfileModal';
 import { activeRaters, ratingFieldFor, computeNotaMedia, slugifyAdminKey } from './utils/ratings';
@@ -825,7 +826,8 @@ export default function App() {
 
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-fc-ink bg-fc-surface relative" style={bgTextureStyle}>
+    <PullToRefresh>
+      <div className="min-h-screen flex flex-col font-sans text-fc-ink bg-fc-surface relative" style={bgTextureStyle}>
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="fc-blob absolute -top-16 -left-16 w-72 h-72 bg-fc-limesoft/40 rounded-full blur-3xl" />
         <div className="fc-blob absolute top-1/3 -right-20 w-80 h-80 bg-fc-lime/20 rounded-full blur-3xl" style={{ animationDelay: '2s' }} />
@@ -1119,6 +1121,7 @@ export default function App() {
           onClose={() => setShowInstallGuideModal(false)}
         />
       )}
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
