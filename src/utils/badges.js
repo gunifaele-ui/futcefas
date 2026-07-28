@@ -35,7 +35,7 @@ function maxRunLength(sequence) {
   return max;
 }
 
-function buildPlayerMatchStats(matchHistory) {
+function buildPlayerMatchStats(matchHistory = []) {
   const sorted = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
   const stats = new Map();
   const ensure = (id, nome) => {
@@ -44,11 +44,17 @@ function buildPlayerMatchStats(matchHistory) {
   };
 
   sorted.forEach((m) => {
-    m.teams.forEach((t) => {
+    if (!m) return;
+    const goals = Array.isArray(m.goals) ? m.goals : [];
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    teams.forEach((t) => {
+      if (!t) return;
       const teamWon = teamResultCount(m, t, 'vitorias') > 0;
-      t.players.forEach((p) => {
+      const players = Array.isArray(t.players) ? t.players : [];
+      players.forEach((p) => {
+        if (!p || !p.id) return;
         const entry = ensure(p.id, p.nome);
-        const goal = m.goals.find((g) => g.playerId === p.id);
+        const goal = goals.find((g) => g && g.playerId === p.id);
         entry.matches.push({
           date: m.date,
           gols: goal?.gols || 0,
@@ -62,21 +68,23 @@ function buildPlayerMatchStats(matchHistory) {
   return stats;
 }
 
-function currentStreak(playerId, matchHistoryDesc) {
+function currentStreak(playerId, matchHistoryDesc = []) {
   let streak = 0;
   for (const m of matchHistoryDesc) {
-    const played = m.teams.some((t) => t.players.some((p) => p.id === playerId));
+    if (!m) continue;
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    const played = teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === playerId));
     if (played) streak++;
     else break;
   }
   return streak;
 }
 
-function maxWinStreak(matches) {
+function maxWinStreak(matches = []) {
   let max = 0;
   let cur = 0;
   matches.forEach((m) => {
-    if (m.vitoria) {
+    if (m?.vitoria) {
       cur++;
       max = Math.max(max, cur);
     } else {
@@ -86,10 +94,10 @@ function maxWinStreak(matches) {
   return max;
 }
 
-function currentDrySpell(matchesDesc) {
+function currentDrySpell(matchesDesc = []) {
   let streak = 0;
   for (const m of matchesDesc) {
-    if (m.gols === 0) streak++;
+    if (m?.gols === 0) streak++;
     else break;
   }
   return streak;
@@ -112,10 +120,14 @@ function countQualifyingRuns(sequence, threshold) {
   return count;
 }
 
-function buildAttendanceRunCounts(playerIds, matchHistoryAsc, thresholds) {
+function buildAttendanceRunCounts(playerIds = [], matchHistoryAsc = [], thresholds) {
   const counts = new Map();
   playerIds.forEach((id) => {
-    const seq = matchHistoryAsc.map((m) => m.teams.some((t) => t.players.some((p) => p.id === id)));
+    const seq = matchHistoryAsc.map((m) => {
+      if (!m) return false;
+      const teams = Array.isArray(m.teams) ? m.teams : [];
+      return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === id));
+    });
     counts.set(id, {
       ferro: countQualifyingRuns(seq, thresholds.ferro),
       titanio: countQualifyingRuns(seq, thresholds.titanio),
@@ -127,8 +139,9 @@ function buildAttendanceRunCounts(playerIds, matchHistoryAsc, thresholds) {
 function buildPlayedRunCounts(statsById, thresholds) {
   const counts = new Map();
   statsById.forEach((entry, id) => {
-    const winSeq = entry.matches.map((m) => m.vitoria);
-    const drySeq = entry.matches.map((m) => m.gols === 0);
+    const matches = Array.isArray(entry.matches) ? entry.matches : [];
+    const winSeq = matches.map((m) => m.vitoria);
+    const drySeq = matches.map((m) => m.gols === 0);
     counts.set(id, {
       trator: countQualifyingRuns(winSeq, thresholds.trator),
       seca: countQualifyingRuns(drySeq, thresholds.seca),
@@ -137,23 +150,30 @@ function buildPlayedRunCounts(statsById, thresholds) {
   return counts;
 }
 
-function buildStatsList(matches) {
+function buildStatsList(matches = []) {
   const map = new Map();
   const ensure = (id, nome) => {
     if (!map.has(id)) map.set(id, { id, nome, gols: 0, assistencias: 0, presencas: 0, vitorias: 0 });
     return map.get(id);
   };
 
-  matches.forEach((m) => {
-    m.teams.forEach((t) => {
+  (matches || []).forEach((m) => {
+    if (!m) return;
+    const goals = Array.isArray(m.goals) ? m.goals : [];
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    teams.forEach((t) => {
+      if (!t) return;
       const vitorias = teamResultCount(m, t, 'vitorias');
-      t.players.forEach((p) => {
+      const players = Array.isArray(t.players) ? t.players : [];
+      players.forEach((p) => {
+        if (!p || !p.id) return;
         const entry = ensure(p.id, p.nome);
         entry.presencas += 1;
         entry.vitorias += vitorias;
       });
     });
-    m.goals.forEach((g) => {
+    goals.forEach((g) => {
+      if (!g || !g.playerId) return;
       const entry = ensure(g.playerId, g.nome);
       entry.gols += g.gols || 0;
       entry.assistencias += g.assistencias || 0;
@@ -164,12 +184,12 @@ function buildStatsList(matches) {
 }
 
 function buildQuarterStats(matchHistory, now) {
-  const quarterMatches = matchHistory.filter((m) => isSameQuarter(m.date, now));
+  const quarterMatches = (matchHistory || []).filter((m) => m && isSameQuarter(m.date, now));
   return { list: buildStatsList(quarterMatches), quarterMatchCount: quarterMatches.length };
 }
 
 function leadersFor(quarterStatsList, statKey) {
-  const candidates = quarterStatsList.filter((s) => s[statKey] > 0);
+  const candidates = (quarterStatsList || []).filter((s) => s && s[statKey] > 0);
   if (candidates.length === 0) return [];
   const max = Math.max(...candidates.map((s) => s[statKey]));
   return candidates.filter((s) => s[statKey] === max);
@@ -180,11 +200,14 @@ function undisputedQuarterLeader(quarterStatsList, statKey) {
   return tied.length === 1 ? tied[0] : null;
 }
 
-function topPair(matchHistory) {
+function topPair(matchHistory = []) {
   const pairCounts = new Map();
-  matchHistory.forEach((m) => {
-    m.teams.forEach((t) => {
-      const roster = t.players;
+  (matchHistory || []).forEach((m) => {
+    if (!m) return;
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    teams.forEach((t) => {
+      if (!t) return;
+      const roster = (t.players || []).filter((p) => p && p.id);
       for (let i = 0; i < roster.length; i++) {
         for (let j = i + 1; j < roster.length; j++) {
           const key = [roster[i].id, roster[j].id].sort().join('::');
@@ -207,7 +230,7 @@ function topPair(matchHistory) {
   return { ids: bestKey.split('::'), count: bestCount };
 }
 
-function ratingImprovement(playerId, ratingHistory, currentNota) {
+function ratingImprovement(playerId, ratingHistory = [], currentNota) {
   if (currentNota == null) return null;
   const now = Date.now();
   const minTime = now - EM_ALTA_MAX_DAYS * DAY_MS;
@@ -438,13 +461,14 @@ export function computeBadgesForPlayers(players, matchHistory, ratingHistory = [
 }
 
 export function getTopBadge(badges) {
-  if (!badges) return null;
-  return badges.find((b) => b.achieved) || null;
+  if (!Array.isArray(badges)) return null;
+  return badges.find((b) => b?.achieved) || null;
 }
 
-function computeQuarterAwardsHistory(matchHistory) {
+function computeQuarterAwardsHistory(matchHistory = []) {
   const byQuarter = new Map();
-  matchHistory.forEach((m) => {
+  (matchHistory || []).forEach((m) => {
+    if (!m || !m.date) return;
     const key = quarterKey(m.date);
     if (!byQuarter.has(key)) byQuarter.set(key, []);
     byQuarter.get(key).push(m);
@@ -452,6 +476,7 @@ function computeQuarterAwardsHistory(matchHistory) {
 
   const counts = new Map();
   const ensure = (id) => {
+    if (!id) return { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 };
     if (!counts.has(id)) counts.set(id, { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 });
     return counts.get(id);
   };
@@ -459,13 +484,13 @@ function computeQuarterAwardsHistory(matchHistory) {
   byQuarter.forEach((matches) => {
     const list = buildStatsList(matches);
 
-    leadersFor(list, 'vitorias').forEach((s) => { ensure(s.id).campeao += 1; });
-    leadersFor(list, 'gols').forEach((s) => { ensure(s.id).artilheiro += 1; });
-    leadersFor(list, 'assistencias').forEach((s) => { ensure(s.id).garcom += 1; });
+    leadersFor(list, 'vitorias').forEach((s) => { if (s?.id) ensure(s.id).campeao += 1; });
+    leadersFor(list, 'gols').forEach((s) => { if (s?.id) ensure(s.id).artilheiro += 1; });
+    leadersFor(list, 'assistencias').forEach((s) => { if (s?.id) ensure(s.id).garcom += 1; });
 
     if (matches.length >= MIN_QUARTER_MATCHES_FOR_ATTENDANCE) {
-      const withPct = list.filter((s) => s.presencas > 0).map((s) => ({ ...s, pct: Math.round((s.presencas / matches.length) * 100) }));
-      leadersFor(withPct, 'pct').forEach((s) => { ensure(s.id).sempre_presente += 1; });
+      const withPct = list.filter((s) => s && s.presencas > 0).map((s) => ({ ...s, pct: Math.round((s.presencas / matches.length) * 100) }));
+      leadersFor(withPct, 'pct').forEach((s) => { if (s?.id) ensure(s.id).sempre_presente += 1; });
     }
   });
 
@@ -476,14 +501,18 @@ function computeQuarterAwardsHistory(matchHistory) {
   return counts;
 }
 
-function bestPartnerFor(playerId, matchHistory) {
+function bestPartnerFor(playerId, matchHistory = []) {
   const counts = new Map();
-  matchHistory.forEach((m) => {
-    m.teams.forEach((t) => {
-      const inTeam = t.players.some((p) => p.id === playerId);
+  (matchHistory || []).forEach((m) => {
+    if (!m) return;
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    teams.forEach((t) => {
+      if (!t) return;
+      const players = Array.isArray(t.players) ? t.players.filter(Boolean) : [];
+      const inTeam = players.some((p) => p.id === playerId);
       if (!inTeam) return;
-      t.players.forEach((p) => {
-        if (p.id === playerId) return;
+      players.forEach((p) => {
+        if (!p || !p.id || p.id === playerId) return;
         const cur = counts.get(p.id) || { id: p.id, nome: p.nome, count: 0 };
         cur.count += 1;
         counts.set(p.id, cur);
@@ -498,30 +527,35 @@ function bestPartnerFor(playerId, matchHistory) {
   return best;
 }
 
-export function computeProfileStats(playerId, matchHistory, isGoleiro = false) {
-  const statsById = buildPlayerMatchStats(matchHistory);
+export function computeProfileStats(playerId, matchHistory = [], isGoleiro = false) {
+  const safeHistory = Array.isArray(matchHistory) ? matchHistory : [];
+  const statsById = buildPlayerMatchStats(safeHistory);
   const entry = statsById.get(playerId);
   const matches = entry?.matches || [];
 
-  const vitorias = matches.filter((m) => m.vitoria).length;
+  const vitorias = matches.filter((m) => m?.vitoria).length;
   const presencas = matches.length;
   const totals = {
-    gols: matches.reduce((sum, m) => sum + m.gols, 0),
-    assistencias: matches.reduce((sum, m) => sum + m.assistencias, 0),
+    gols: matches.reduce((sum, m) => sum + (m?.gols || 0), 0),
+    assistencias: matches.reduce((sum, m) => sum + (m?.assistencias || 0), 0),
     presencas,
     vitorias,
     pctVitorias: presencas > 0 ? Math.round((vitorias / presencas) * 100) : 0,
   };
 
-  const maxGolsMatch = matches.length ? Math.max(0, ...matches.map((m) => m.gols)) : 0;
-  const maxDrySpell = isGoleiro ? 0 : maxRunLength(matches.map((m) => m.gols === 0));
+  const maxGolsMatch = matches.length ? Math.max(0, ...matches.map((m) => m?.gols || 0)) : 0;
+  const maxDrySpell = isGoleiro ? 0 : maxRunLength(matches.map((m) => m?.gols === 0));
 
-  const matchHistoryAsc = [...matchHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const presenceSeq = matchHistoryAsc.map((m) => m.teams.some((t) => t.players.some((p) => p.id === playerId)));
+  const matchHistoryAsc = [...safeHistory].sort((a, b) => new Date(a?.date || 0) - new Date(b?.date || 0));
+  const presenceSeq = matchHistoryAsc.map((m) => {
+    if (!m) return false;
+    const teams = Array.isArray(m.teams) ? m.teams : [];
+    return teams.some((t) => t && Array.isArray(t.players) && t.players.some((p) => p && p.id === playerId));
+  });
   const maxAttendanceStreak = maxRunLength(presenceSeq);
 
-  const partner = bestPartnerFor(playerId, matchHistory);
-  const awards = computeQuarterAwardsHistory(matchHistory).get(playerId) || {
+  const partner = bestPartnerFor(playerId, safeHistory);
+  const awards = computeQuarterAwardsHistory(safeHistory).get(playerId) || {
     campeao: 0,
     artilheiro: 0,
     garcom: 0,
@@ -532,15 +566,17 @@ export function computeProfileStats(playerId, matchHistory, isGoleiro = false) {
   return { totals, maxGolsMatch, maxDrySpell, maxAttendanceStreak, partner, awards };
 }
 
-export function computeCareerTotals(matchHistory) {
-  const statsById = buildPlayerMatchStats(matchHistory);
+export function computeCareerTotals(matchHistory = []) {
+  const safeHistory = Array.isArray(matchHistory) ? matchHistory : [];
+  const statsById = buildPlayerMatchStats(safeHistory);
   const totals = new Map();
   statsById.forEach((entry, id) => {
+    const matches = Array.isArray(entry?.matches) ? entry.matches : [];
     totals.set(id, {
-      gols: entry.matches.reduce((sum, m) => sum + m.gols, 0),
-      assistencias: entry.matches.reduce((sum, m) => sum + m.assistencias, 0),
-      presencas: entry.matches.length,
-      vitorias: entry.matches.filter((m) => m.vitoria).length,
+      gols: matches.reduce((sum, m) => sum + (m?.gols || 0), 0),
+      assistencias: matches.reduce((sum, m) => sum + (m?.assistencias || 0), 0),
+      presencas: matches.length,
+      vitorias: matches.filter((m) => m?.vitoria).length,
     });
   });
   return totals;

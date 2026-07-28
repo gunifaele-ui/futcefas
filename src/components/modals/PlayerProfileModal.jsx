@@ -41,16 +41,18 @@ const AWARD_ICONS = {
   sempre_presente: '📅',
 };
 
-export default function PlayerProfileModal({ player, badges, matchHistory, onClose }) {
+export default function PlayerProfileModal({ player, badges = [], matchHistory = [], onClose }) {
   const [openBadgeId, setOpenBadgeId] = useState(null);
 
+  if (!player) return null;
+
   const isGoleiro = player.posicaoFixa === 'Goleiro';
-  const achievedBadges = useMemo(() => badges.filter((b) => b.achieved), [badges]);
+  const achievedBadges = useMemo(() => (Array.isArray(badges) ? badges.filter((b) => b?.achieved) : []), [badges]);
   const topBadge = getTopBadge(badges);
-  const openBadge = achievedBadges.find((b) => b.id === openBadgeId) || null;
+  const openBadge = achievedBadges.find((b) => b?.id === openBadgeId) || null;
 
   const stats = useMemo(
-    () => computeProfileStats(player.id, matchHistory, isGoleiro),
+    () => computeProfileStats(player.id, matchHistory || [], isGoleiro),
     [player.id, matchHistory, isGoleiro]
   );
 

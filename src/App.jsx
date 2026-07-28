@@ -813,7 +813,7 @@ export default function App() {
       <div className="flex-1 flex md:flex-row md:items-start md:gap-6 md:max-w-6xl md:w-full md:mx-auto md:px-6 md:py-6">
       <SideNav isAdmin={isAdmin} activeTab={activeTab} onChangeTab={setActiveTab} />
       <div className="hidden md:block w-px self-stretch bg-fc-line/50 shrink-0" />
-      <main className="flex-1 min-w-0 max-w-md w-full mx-auto px-3.5 py-3 md:max-w-none md:mx-0 md:px-0 md:py-0">
+      <main className="flex-1 min-w-0 max-w-md w-full mx-auto px-3.5 pt-3 pb-28 md:max-w-none md:mx-0 md:px-0 md:py-0">
         {isLoadingData ? (
           <Skeleton />
         ) : (
@@ -1031,7 +1031,7 @@ export default function App() {
       {profileTargetPlayer && (
         <PlayerProfileModal
           player={profileTargetPlayer}
-          badges={badgesByPlayerId.get(profileTargetPlayer.id) || []}
+          badges={badgesByPlayerId?.get(profileTargetPlayer.id) || []}
           matchHistory={effectiveMatchHistory}
           onClose={() => setProfileTargetPlayer(null)}
         />

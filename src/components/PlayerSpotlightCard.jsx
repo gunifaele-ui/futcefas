@@ -18,9 +18,9 @@ function TiedBadgeChip({ badgeIcon, badgeLabel, mainValue, mainUnit, chip }) {
         <Icon name={badgeIcon} size={9} className="shrink-0" />
         <span className="truncate">{badgeLabel}</span>
       </span>
-      <div className={`shrink-0 rounded-xl px-2 py-1 text-center leading-none shadow ${chip}`}>
-        <p className="text-[15px] font-extrabold leading-none">{mainValue}</p>
-        <p className="text-[6.5px] font-semibold uppercase tracking-wide leading-none mt-0.5">{mainUnit}</p>
+      <div className={`shrink-0 rounded-xl px-2.5 py-1 text-center leading-none shadow flex flex-col items-center justify-center ${chip}`}>
+        <p className="text-[14px] font-extrabold leading-none">{mainValue}</p>
+        <p className="text-[7px] font-semibold uppercase tracking-wide leading-none mt-0.5 whitespace-nowrap">{mainUnit}</p>
       </div>
     </div>
   );
@@ -126,9 +126,9 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
             <Icon name={badgeIcon} size={9} className="shrink-0" />
             <span className="truncate">{badgeLabel}</span>
           </span>
-          <div className={`shrink-0 rounded-xl px-2 py-1 text-center leading-none shadow ${chip}`}>
-            <p className="text-[15px] font-extrabold leading-none">{mainValue}</p>
-            <p className="text-[6.5px] font-semibold uppercase tracking-wide leading-none mt-0.5">{mainUnit}</p>
+          <div className={`shrink-0 rounded-xl px-2.5 py-1 text-center leading-none shadow flex flex-col items-center justify-center ${chip}`}>
+            <p className="text-[14px] font-extrabold leading-none">{mainValue}</p>
+            <p className="text-[7px] font-semibold uppercase tracking-wide leading-none mt-0.5 whitespace-nowrap">{mainUnit}</p>
           </div>
         </div>
         <div className="absolute bottom-0 inset-x-0 p-2.5">

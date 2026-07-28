@@ -3,7 +3,6 @@ import Avatar from '../Avatar';
 import Icon from '../Icon';
 import { ratingTone } from '../../utils/playerVisuals';
 import { missingRaterLabels } from '../../utils/ratings';
-import { getTopBadge } from '../../utils/badges';
 
 const SUBTABS = [
   { key: 'Mensalista', label: 'Mensalistas' },
@@ -33,7 +32,6 @@ export default function NotasTab({
   players,
   admins,
   isViewer,
-  badgesByPlayerId,
   onOpenProfile,
   onOpenRatingModal,
   onChangeCategory,
@@ -120,7 +118,6 @@ export default function NotasTab({
             const isGoleiro = p.posicaoFixa === 'Goleiro';
             const tone = !isGoleiro ? ratingTone(p.notaMedia) : null;
             const missing = !isGoleiro ? missingRaterLabels(p, admins) : [];
-            const playerBadges = (badgesByPlayerId?.get(p.id) || []).filter((b) => b.achieved);
             return (
               <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
                 <button
@@ -138,18 +135,7 @@ export default function NotasTab({
                       </span>
                     )}
                   </span>
-
-                  {playerBadges.length > 0 && (
-                    <div className="flex items-center gap-1 shrink-0 ml-auto pr-0.5">
-                      {playerBadges.map((badge) => (
-                        <span key={badge.id} title={`${badge.label}: ${badge.description}`} className="text-[13.5px] leading-none shrink-0">
-                          {badge.icon}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </button>
-                <IconButton onClick={() => onOpenProfile(p)} title="Ampliar perfil" icon="user" />
                 {!isGoleiro && (
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
                     {p.notaMedia.toFixed(2)}
