@@ -13,6 +13,18 @@ const PAGE_SIZE = 4;
 const INSIGHT_SIZE = 3;
 const RANKING_LIMIT = 5;
 
+
+// Players in matchHistory.teams[].players can be stored as objects {id, nome, ...}
+// OR as plain strings (player IDs). This helper normalises both forms.
+function resolvePlayer(p, playersLookup) {
+  if (!p) return null;
+  if (typeof p === 'string') {
+    const found = playersLookup?.find?.((pl) => pl.id === p);
+    return found ? { id: p, nome: found.nome } : { id: p, nome: p };
+  }
+  return { id: p.id ?? p.nome, nome: p.nome ?? String(p.id) };
+}
+
 function toDateInputValue(isoDate) {
   if (!isoDate || typeof isoDate !== 'string') return new Date().toISOString().slice(0, 10);
   try {
@@ -269,19 +281,23 @@ export default function EstatisticasTab({
     matchHistory.forEach((m) => {
       m.teams.forEach((t) => {
         const wins = teamResultCount(m, t, 'vitorias');
-        if (wins > 0) t.players.forEach((p) => { map[p.nome] = (map[p.nome] || 0) + wins; });
+        if (wins > 0)
+          t.players.forEach((raw) => {
+            const p = resolvePlayer(raw, players);
+            if (p?.nome) map[p.nome] = (map[p.nome] || 0) + wins;
+          });
       });
     });
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
       .map(([nome, n]) => ({ label: nome, value: n, valueLabel: `${n} ${n === 1 ? 'vitória' : 'vitórias'}` }));
-  }, [matchHistory]);
+  }, [matchHistory, players]);
 
   const pairRanking = useMemo(() => {
     const pairCounts = {};
     matchHistory.forEach((m) => {
       m.teams.forEach((t) => {
-        const roster = t.players;
+        const roster = t.players.map((raw) => resolvePlayer(raw, players)).filter(Boolean);
         for (let i = 0; i < roster.length; i++) {
           for (let j = i + 1; j < roster.length; j++) {
             const key = [roster[i].nome, roster[j].nome].sort().join(' & ');
@@ -294,14 +310,15 @@ export default function EstatisticasTab({
       .sort((a, b) => b[1] - a[1])
       .slice(0, INSIGHT_SIZE)
       .map(([dupla, n]) => ({ label: dupla, value: n, valueLabel: `${n} ${n === 1 ? 'vez' : 'vezes'}` }));
-  }, [matchHistory]);
+  }, [matchHistory, players]);
 
   const attendanceRankingFull = useMemo(() => {
     const counts = {};
     matchHistory.forEach((m) => {
       m.teams.forEach((t) => {
-        t.players.forEach((p) => {
-          counts[p.nome] = (counts[p.nome] || 0) + 1;
+        t.players.forEach((raw) => {
+          const p = resolvePlayer(raw, players);
+          if (p?.nome) counts[p.nome] = (counts[p.nome] || 0) + 1;
         });
       });
     });
@@ -310,19 +327,31 @@ export default function EstatisticasTab({
       .map(([nome, count]) => ({ nome, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count)
       .map((a) => ({ label: a.nome, value: a.count, valueLabel: `${a.count}/${total} (${a.pct}%)` }));
-  }, [matchHistory]);
+  }, [matchHistory, players]);
 
   const attendanceRanking = useMemo(() => attendanceRankingFull.slice(0, INSIGHT_SIZE), [attendanceRankingFull]);
 
   const streakRanking = useMemo(() => {
     const sortedMatches = [...matchHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
     const playerNames = new Set();
-    sortedMatches.forEach((m) => m.teams.forEach((t) => t.players.forEach((p) => playerNames.add(p.nome))));
+    sortedMatches.forEach((m) =>
+      m.teams.forEach((t) =>
+        t.players.forEach((raw) => {
+          const p = resolvePlayer(raw, players);
+          if (p?.nome) playerNames.add(p.nome);
+        })
+      )
+    );
 
     const streaks = [...playerNames].map((nome) => {
       let streak = 0;
       for (const m of sortedMatches) {
-        const played = m.teams.some((t) => t.players.some((p) => p.nome === nome));
+        const played = m.teams.some((t) =>
+          t.players.some((raw) => {
+            const p = resolvePlayer(raw, players);
+            return p?.nome === nome;
+          })
+        );
         if (played) streak++;
         else break;
       }
@@ -334,7 +363,7 @@ export default function EstatisticasTab({
       .sort((a, b) => b.streak - a.streak)
       .slice(0, INSIGHT_SIZE)
       .map((s) => ({ label: s.nome, value: s.streak, valueLabel: `${s.streak} ${s.streak === 1 ? 'pelada' : 'peladas'}` }));
-  }, [matchHistory]);
+  }, [matchHistory, players]);
 
   const quarterPlayerStats = useMemo(() => {
     const now = new Date();
@@ -349,7 +378,9 @@ export default function EstatisticasTab({
       m.teams.forEach((t) => {
         const vitorias = teamResultCount(m, t, 'vitorias');
         const empates = teamResultCount(m, t, 'empates');
-        t.players.forEach((p) => {
+        t.players.forEach((raw) => {
+          const p = resolvePlayer(raw, players);
+          if (!p) return;
           const entry = ensure(p.id, p.nome);
           entry.presencas += 1;
           entry.vitorias += vitorias;

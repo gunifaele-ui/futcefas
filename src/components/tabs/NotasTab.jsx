@@ -32,6 +32,7 @@ export default function NotasTab({
   players,
   admins,
   isViewer,
+  badgesByPlayerId,
   onOpenProfile,
   onOpenRatingModal,
   onChangeCategory,
@@ -40,7 +41,7 @@ export default function NotasTab({
   onOpenEditPlayer,
 }) {
   const [subTab, setSubTab] = useState('Mensalista');
-  const [sortMode, setSortMode] = useState('nome');
+  const [sortMode, setSortMode] = useState('nota');
 
   const list =
     subTab === 'Goleiro' ? players.filter((p) => p.posicaoFixa === 'Goleiro') : players.filter((p) => p.posicaoFixa === 'Linha' && p.tipo === subTab);
@@ -147,7 +148,7 @@ export default function NotasTab({
                       </span>
                     )}
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border ${tone.text} ${tone.bg} ${tone.border}`}>
-                      {p.notaMedia.toFixed(2)}
+                      {p.notaMedia != null ? p.notaMedia.toFixed(2) : '—'}
                     </span>
                   </div>
                 )}

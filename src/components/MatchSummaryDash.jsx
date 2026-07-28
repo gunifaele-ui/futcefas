@@ -83,7 +83,9 @@ export default function MatchSummaryDash({
     teams.forEach((t) => {
       if (t && Array.isArray(t.players)) {
         t.players.forEach((p) => {
-          if (p && p.id) teamPlayerMap.set(p.id, t.id);
+          // p can be an object {id, nome} OR a plain string (player ID)
+          const id = typeof p === 'string' ? p : p?.id;
+          if (id) teamPlayerMap.set(id, t.id);
         });
       }
     });
