@@ -56,11 +56,20 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
     [player.id, matchHistory, isGoleiro]
   );
 
+  const safeStats = stats || {
+    totals: { gols: 0, assistencias: 0, presencas: 0, vitorias: 0, pctVitorias: 0 },
+    maxGolsMatch: 0,
+    maxDrySpell: 0,
+    maxAttendanceStreak: 0,
+    partner: null,
+    awards: { campeao: 0, artilheiro: 0, garcom: 0, sempre_presente: 0, total: 0 },
+  };
+
   const awardEntries = [
-    { key: 'campeao', label: 'Campeão do trimestre', count: stats.awards.campeao },
-    { key: 'artilheiro', label: 'Artilheiro do trimestre', count: stats.awards.artilheiro },
-    { key: 'garcom', label: 'Garçom do trimestre', count: stats.awards.garcom },
-    { key: 'sempre_presente', label: 'Sempre presente', count: stats.awards.sempre_presente },
+    { key: 'campeao', label: 'Campeão do trimestre', count: safeStats.awards?.campeao || 0 },
+    { key: 'artilheiro', label: 'Artilheiro do trimestre', count: safeStats.awards?.artilheiro || 0 },
+    { key: 'garcom', label: 'Garçom do trimestre', count: safeStats.awards?.garcom || 0 },
+    { key: 'sempre_presente', label: 'Sempre presente', count: safeStats.awards?.sempre_presente || 0 },
   ].filter((a) => a.count > 0);
 
   return (
@@ -91,10 +100,10 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
         <div>
           <h4 className="text-[11px] font-bold text-fc-ink/60 uppercase tracking-wider mb-2">Estatísticas Gerais</h4>
           <div className="grid grid-cols-4 gap-1.5">
-            <StatCard label="Gols" value={stats.totals.gols} />
-            <StatCard label="Assist." value={stats.totals.assistencias} />
-            <StatCard label="Vitórias" value={stats.totals.vitorias} subtext={`${stats.totals.pctVitorias}%`} />
-            <StatCard label="Presenças" value={stats.totals.presencas} />
+            <StatCard label="Gols" value={safeStats.totals.gols} />
+            <StatCard label="Assist." value={safeStats.totals.assistencias} />
+            <StatCard label="Vitórias" value={safeStats.totals.vitorias} subtext={`${safeStats.totals.pctVitorias}%`} />
+            <StatCard label="Presenças" value={safeStats.totals.presencas} />
           </div>
         </div>
 
@@ -105,7 +114,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               <span className="w-8 h-8 rounded-lg bg-fc-coral/10 text-fc-coral flex items-center justify-center text-[16px] shrink-0">⚽</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Mais gols num dia</p>
-                <p className="text-[13px] font-bold text-fc-ink leading-tight">{stats.maxGolsMatch} {stats.maxGolsMatch === 1 ? 'gol' : 'gols'}</p>
+                <p className="text-[13px] font-bold text-fc-ink leading-tight">{safeStats.maxGolsMatch} {safeStats.maxGolsMatch === 1 ? 'gol' : 'gols'}</p>
               </div>
             </div>
 
@@ -113,7 +122,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               <span className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center text-[16px] shrink-0">🔥</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Seq. de presença</p>
-                <p className="text-[13px] font-bold text-fc-ink leading-tight">{stats.maxAttendanceStreak} {stats.maxAttendanceStreak === 1 ? 'pelada' : 'peladas'}</p>
+                <p className="text-[13px] font-bold text-fc-ink leading-tight">{safeStats.maxAttendanceStreak} {safeStats.maxAttendanceStreak === 1 ? 'pelada' : 'peladas'}</p>
               </div>
             </div>
 
@@ -121,7 +130,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               <span className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center text-[16px] shrink-0">🧊</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Seq. sem marcar</p>
-                <p className="text-[13px] font-bold text-fc-ink leading-tight">{isGoleiro ? '—' : `${stats.maxDrySpell} ${stats.maxDrySpell === 1 ? 'jogo' : 'jogos'}`}</p>
+                <p className="text-[13px] font-bold text-fc-ink leading-tight">{isGoleiro ? '—' : `${safeStats.maxDrySpell} ${safeStats.maxDrySpell === 1 ? 'jogo' : 'jogos'}`}</p>
               </div>
             </div>
 
@@ -130,9 +139,9 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Maior parceiro</p>
                 <p className="text-[12.5px] font-bold text-fc-ink leading-tight truncate">
-                  {stats.partner ? `${stats.partner.nome}` : '—'}
+                  {safeStats.partner ? `${safeStats.partner.nome}` : '—'}
                 </p>
-                {stats.partner && <p className="text-[9.5px] text-fc-muted font-medium">{stats.partner.count} jogos juntos</p>}
+                {safeStats.partner && <p className="text-[9.5px] text-fc-muted font-medium">{safeStats.partner.count} jogos juntos</p>}
               </div>
             </div>
           </div>
@@ -141,9 +150,9 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-[11px] font-bold text-fc-ink/60 uppercase tracking-wider">Destaques do Trimestre</h4>
-            {stats.awards.total > 0 && (
+            {(safeStats.awards?.total || 0) > 0 && (
               <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300/60">
-                ⭐ {stats.awards.total} {stats.awards.total === 1 ? 'título' : 'títulos'}
+                ⭐ {safeStats.awards.total} {safeStats.awards.total === 1 ? 'título' : 'títulos'}
               </span>
             )}
           </div>

@@ -308,9 +308,10 @@ export const BADGE_DEFINITIONS = [
     label: 'Trator',
     description: '3 ou mais vitórias seguidas.',
     compute: (ctx, player) => {
-      const s = ctx.statsById.get(player.id);
-      const best = s ? maxWinStreak(s.matches) : 0;
-      const count = ctx.playedRunCounts.get(player.id)?.trator || 0;
+      const s = ctx.statsById?.get(player.id);
+      const matches = Array.isArray(s?.matches) ? s.matches : [];
+      const best = maxWinStreak(matches);
+      const count = ctx.playedRunCounts?.get(player.id)?.trator || 0;
       return { achieved: count > 0, count, detail: `${best} seguidas` };
     },
   },
@@ -320,9 +321,10 @@ export const BADGE_DEFINITIONS = [
     label: 'Hat-trick',
     description: '3 ou mais gols numa pelada só.',
     compute: (ctx, player) => {
-      const s = ctx.statsById.get(player.id);
-      const count = s ? s.matches.filter((m) => m.gols >= 3).length : 0;
-      const best = s ? Math.max(0, ...s.matches.map((m) => m.gols)) : 0;
+      const s = ctx.statsById?.get(player.id);
+      const matches = Array.isArray(s?.matches) ? s.matches : [];
+      const count = matches.filter((m) => (m?.gols || 0) >= 3).length;
+      const best = matches.length > 0 ? Math.max(0, ...matches.map((m) => m?.gols || 0)) : 0;
       return { achieved: count > 0, count, detail: count > 0 ? `${best} gols numa pelada` : null };
     },
   },
@@ -343,8 +345,8 @@ export const BADGE_DEFINITIONS = [
     label: 'Sequência de Ferro',
     description: '5 peladas seguidas sem faltar.',
     compute: (ctx, player) => {
-      const current = ctx.streaks.get(player.id) || 0;
-      const count = ctx.attendanceRunCounts.get(player.id)?.ferro || 0;
+      const current = ctx.streaks?.get(player.id) || 0;
+      const count = ctx.attendanceRunCounts?.get(player.id)?.ferro || 0;
       return { achieved: count > 0, count, detail: `${current} seguidas agora` };
     },
   },
@@ -355,7 +357,7 @@ export const BADGE_DEFINITIONS = [
     description: 'Integra a dupla mais frequente.',
     compute: (ctx, player) => {
       const pair = ctx.pair;
-      const achieved = !!pair && pair.ids.includes(player.id);
+      const achieved = !!pair && Array.isArray(pair.ids) && pair.ids.includes(player.id);
       return { achieved, detail: achieved ? `${pair.count}x juntos` : null };
     },
   },
@@ -365,7 +367,7 @@ export const BADGE_DEFINITIONS = [
     label: 'Em Alta',
     description: 'Nota subiu no último mês.',
     compute: (ctx, player) => {
-      const diff = ratingImprovement(player.id, ctx.ratingHistory, player.notaMedia);
+      const diff = ratingImprovement(player.id, ctx.ratingHistory || [], player.notaMedia);
       const achieved = diff != null && diff >= EM_ALTA_THRESHOLD;
       return { achieved, detail: achieved ? `+${diff.toFixed(1)} no mês` : null };
     },
@@ -376,7 +378,7 @@ export const BADGE_DEFINITIONS = [
     label: 'Fiel',
     description: '10 peladas jogadas.',
     compute: (ctx, player) => {
-      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      const total = ctx.statsById?.get(player.id)?.matches?.length || 0;
       return { achieved: total >= 10, detail: `${total} peladas` };
     },
   },
@@ -386,7 +388,7 @@ export const BADGE_DEFINITIONS = [
     label: 'Estreante',
     description: 'Jogou a primeira pelada.',
     compute: (ctx, player) => {
-      const total = ctx.statsById.get(player.id)?.matches.length || 0;
+      const total = ctx.statsById?.get(player.id)?.matches?.length || 0;
       return { achieved: total === 1, detail: total === 1 ? 'Primeira pelada!' : null };
     },
   },
@@ -397,10 +399,11 @@ export const BADGE_DEFINITIONS = [
     description: '3 ou mais peladas seguidas sem marcar gol.',
     compute: (ctx, player) => {
       if (player.posicaoFixa === 'Goleiro') return { achieved: false, count: 0, detail: null };
-      const s = ctx.statsById.get(player.id);
-      if (!s || s.matches.length === 0) return { achieved: false, count: 0, detail: null };
-      const current = currentDrySpell([...s.matches].reverse());
-      const count = ctx.playedRunCounts.get(player.id)?.seca || 0;
+      const s = ctx.statsById?.get(player.id);
+      const matches = Array.isArray(s?.matches) ? s.matches : [];
+      if (matches.length === 0) return { achieved: false, count: 0, detail: null };
+      const current = currentDrySpell([...matches].reverse());
+      const count = ctx.playedRunCounts?.get(player.id)?.seca || 0;
       return { achieved: count > 0, count, detail: current >= 3 ? `${current} sem gol agora` : null };
     },
   },
