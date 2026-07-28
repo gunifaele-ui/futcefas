@@ -3,23 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --fc-ink: 30 46 40;
-  --fc-limesoft: 237 244 227;
-  --fc-cream: 245 246 243;
-  --fc-muted: 152 160 154;
-  --fc-line: 236 238 233;
+  --fc-ink: 36 38 33;
+  --fc-limesoft: 233 238 229;
+  --fc-cream: 238 236 230;
+  --fc-muted: 142 143 133;
+  --fc-line: 227 224 216;
   --fc-surface: 255 255 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fc-ink: 231 238 232;
-    --fc-limesoft: 36 51 34;
-    --fc-cream: 18 26 22;
-    --fc-muted: 140 160 152;
-    --fc-line: 38 50 41;
-    --fc-surface: 27 38 32;
-  }
 }
 
 html {

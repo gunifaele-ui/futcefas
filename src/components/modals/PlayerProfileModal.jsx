@@ -26,7 +26,7 @@ function BadgeTile({ badge, open, onToggle }) {
 
 function StatCard({ label, value, subtext }) {
   return (
-    <div className="flex flex-col items-center justify-center bg-fc-cream rounded-xl px-2 py-2 text-center gap-0.5 border border-fc-line/40">
+    <div className="flex flex-col items-center justify-center bg-fc-cream rounded-xl px-2 py-2 text-center gap-0.5">
       <span className="text-fc-ink/50 font-semibold text-[8.5px] uppercase tracking-wide truncate w-full">{label}</span>
       <span className="font-bold text-fc-ink text-[13.5px] leading-tight">{value}</span>
       {subtext && <span className="text-[9px] text-fc-muted font-medium">{subtext}</span>}
@@ -112,7 +112,10 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
           <div className="grid grid-cols-4 gap-1.5">
             <StatCard label="Gols" value={safeStats.totals.gols} />
             <StatCard label="Assist." value={safeStats.totals.assistencias} />
-            <StatCard label="Vitórias" value={safeStats.totals.vitorias} subtext={`${safeStats.totals.pctVitorias}%`} />
+            <StatCard
+              label="Vitória/dia"
+              value={safeStats.totals.presencas > 0 ? (safeStats.totals.vitorias / safeStats.totals.presencas).toFixed(2) : '0.00'}
+            />
             <StatCard label="Presenças" value={safeStats.totals.presencas} />
           </div>
         </div>
@@ -120,7 +123,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
         <div>
           <h4 className="text-[11px] font-bold text-fc-ink/60 uppercase tracking-wider mb-2">Recordes e Marcas</h4>
           <div className="grid grid-cols-2 gap-1.5">
-            <div className="bg-fc-surface border border-fc-line rounded-xl p-2.5 flex items-center gap-2.5">
+            <div className="bg-fc-cream rounded-xl p-2.5 flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-fc-coral/10 text-fc-coral flex items-center justify-center text-[16px] shrink-0">⚽</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Mais gols num dia</p>
@@ -128,7 +131,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               </div>
             </div>
 
-            <div className="bg-fc-surface border border-fc-line rounded-xl p-2.5 flex items-center gap-2.5">
+            <div className="bg-fc-cream rounded-xl p-2.5 flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center text-[16px] shrink-0">🔥</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Seq. de presença</p>
@@ -136,7 +139,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               </div>
             </div>
 
-            <div className="bg-fc-surface border border-fc-line rounded-xl p-2.5 flex items-center gap-2.5">
+            <div className="bg-fc-cream rounded-xl p-2.5 flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center text-[16px] shrink-0">🧊</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Seq. sem marcar</p>
@@ -144,7 +147,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
               </div>
             </div>
 
-            <div className="bg-fc-surface border border-fc-line rounded-xl p-2.5 flex items-center gap-2.5">
+            <div className="bg-fc-cream rounded-xl p-2.5 flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-[16px] shrink-0">🤝</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[9.5px] font-semibold text-fc-muted uppercase tracking-wide truncate">Maior parceiro</p>
@@ -161,19 +164,19 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-[11px] font-bold text-fc-ink/60 uppercase tracking-wider">Destaques do Trimestre</h4>
             {(safeStats.awards?.total || 0) > 0 && (
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300/60">
+              <span className="text-[10px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200/70">
                 ⭐ {safeStats.awards.total} {safeStats.awards.total === 1 ? 'título' : 'títulos'}
               </span>
             )}
           </div>
           {awardEntries.length === 0 ? (
-            <p className="text-[11.5px] text-fc-muted bg-fc-surface border border-fc-line rounded-xl px-3 py-2.5 text-center font-medium">
+            <p className="text-[11.5px] text-fc-muted bg-fc-cream rounded-xl px-3 py-2.5 text-center font-medium">
               Ainda não possui destaques trimestrais.
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-1.5">
               {awardEntries.map((a) => (
-                <div key={a.key} className="flex items-center justify-between bg-fc-cream border border-fc-line/50 rounded-xl px-3 py-2">
+                <div key={a.key} className="flex items-center justify-between bg-fc-cream rounded-xl px-3 py-2">
                   <span className="text-[12px] font-medium text-fc-ink flex items-center gap-1.5">
                     <span>{AWARD_ICONS[a.key]}</span> {a.label}
                   </span>
@@ -191,7 +194,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
             Conquistas Desbloqueadas ({achievedBadges.length})
           </h4>
           {achievedBadges.length === 0 ? (
-            <p className="text-[11.5px] text-fc-muted bg-fc-surface border border-fc-line rounded-xl px-3 py-2.5 text-center font-medium">
+            <p className="text-[11.5px] text-fc-muted bg-fc-cream rounded-xl px-3 py-2.5 text-center font-medium">
               Ainda sem insígnias desbloqueadas — continue jogando pra conquistar!
             </p>
           ) : (

@@ -54,7 +54,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
 
       <div className="space-y-2 mb-4">
         {admins.map((adm) => (
-          <div key={adm.key} className="border border-fc-line rounded-xl p-2.5">
+          <div key={adm.key} className="bg-fc-cream rounded-xl p-2.5">
             <div className="flex items-center gap-2">
               <span className={`text-[13px] font-medium flex-1 ${adm.hidden ? 'text-fc-muted line-through' : 'text-fc-ink'}`}>
                 {adm.label}
@@ -82,7 +82,7 @@ export default function SettingsModal({ admins, onAddAdmin, onToggleHidden, onDe
                 type="button"
                 onClick={() => onDeleteAdmin(adm.key)}
                 title="Excluir ADM"
-                className="w-7 h-7 rounded-lg bg-fc-surface hover:bg-orange-50 border border-fc-line text-fc-coraldark flex items-center justify-center shrink-0 transition"
+                className="w-7 h-7 rounded-lg bg-fc-surface hover:bg-fc-coral/10 border border-fc-line text-fc-coraldark flex items-center justify-center shrink-0 transition"
               >
                 <Icon name="trash" size={14} />
               </button>

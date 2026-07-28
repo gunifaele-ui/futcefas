@@ -6,13 +6,13 @@ export default {
     extend: {
       colors: {
         fc: {
-          // Cores de marca: fixas nos dois temas (botões, badges, ícones sólidos).
-          dark: '#1E2E28',
-          dark2: '#16221E',
-          lime: '#8FCB5C',
-          coral: '#DF7C64',
-          coraldark: '#C4664F',
-          // Cores de superfície/neutras: reagem ao tema via variáveis CSS (ver index.css).
+          // Cores de marca: fixas (botões, badges, ícones sólidos).
+          dark: '#26281F',
+          dark2: '#1B1D16',
+          lime: '#7C9C77',
+          coral: '#A25D45',
+          coraldark: '#82492F',
+          // Cores de superfície/neutras: variáveis CSS (ver index.css).
           ink: 'rgb(var(--fc-ink) / <alpha-value>)',
           limesoft: 'rgb(var(--fc-limesoft) / <alpha-value>)',
           cream: 'rgb(var(--fc-cream) / <alpha-value>)',

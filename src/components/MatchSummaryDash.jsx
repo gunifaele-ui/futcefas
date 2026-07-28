@@ -213,13 +213,13 @@ export default function MatchSummaryDash({
       {/* Banner do Relógio de Edição (24h) */}
       {isMatchFinalized && (
         <div
-          className={`rounded-2xl p-3 border flex items-center gap-2.5 shadow-xs transition ${
-            timeLeftMs > 0 ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-fc-cream border-fc-line text-fc-muted'
+          className={`rounded-2xl p-3 flex items-center gap-2.5 shadow-xs transition ${
+            timeLeftMs > 0 ? 'bg-amber-50 text-amber-900' : 'bg-fc-cream text-fc-muted'
           }`}
         >
           <span
             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-              timeLeftMs > 0 ? 'bg-amber-200 text-amber-700' : 'bg-fc-surface text-fc-muted'
+              timeLeftMs > 0 ? 'bg-amber-100 text-amber-700' : 'bg-fc-surface text-fc-muted'
             }`}
           >
             <Icon name={timeLeftMs > 0 ? 'clock' : 'lock'} size={15} />
@@ -230,7 +230,7 @@ export default function MatchSummaryDash({
                 {timeLeftMs > 0 ? 'Edição pós-jogo liberada' : 'Edição encerrada (24h ultrapassadas)'}
               </span>
               {timeLeftMs > 0 && formattedCountdown && (
-                <span className="text-[9.5px] font-extrabold bg-amber-300/70 text-amber-900 px-2 py-0.5 rounded-full whitespace-nowrap">
+                <span className="text-[9.5px] font-extrabold bg-amber-200/60 text-amber-900 px-2 py-0.5 rounded-full whitespace-nowrap">
                   {formattedCountdown} restantes
                 </span>
               )}
@@ -247,13 +247,13 @@ export default function MatchSummaryDash({
       {/* HERO SPOTLIGHTS (Campeão e MVP) */}
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 items-stretch">
         {/* CAMPEÃO DO DIA */}
-        <div className="bg-gradient-to-br from-amber-500/10 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 border border-amber-500/30 shadow-card flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-amber-500/5 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-              <span className="text-[10.5px] font-bold tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 border border-amber-300/50 whitespace-nowrap">
+              <span className="text-[10.5px] font-bold tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 whitespace-nowrap">
                 <Icon name="trophy" size={11} /> Campeão do Dia
               </span>
-              <span className="text-[11px] font-extrabold text-amber-900 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30 whitespace-nowrap">
+              <span className="text-[11px] font-extrabold text-amber-900 bg-amber-500/15 px-2.5 py-0.5 rounded-full whitespace-nowrap">
                 {stats.maxVitorias} {stats.maxVitorias === 1 ? 'Vitória' : 'Vitórias'}
               </span>
             </div>
@@ -261,10 +261,10 @@ export default function MatchSummaryDash({
             {stats.winningTeams.length > 0 ? (
               <div className="space-y-2.5">
                 {stats.winningTeams.map((team) => (
-                  <div key={team.id} className="bg-fc-cream/90 rounded-xl p-3 border border-amber-200/80 shadow-xs">
+                  <div key={team.id} className="bg-fc-cream/90 rounded-xl p-3 shadow-xs">
                     <h3 className="font-bold text-[15px] text-fc-ink mb-2.5 flex items-center justify-between gap-2">
                       <span className="truncate">{team.name}</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-200/60 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-md">
                         1º Lugar
                       </span>
                     </h3>
@@ -274,7 +274,7 @@ export default function MatchSummaryDash({
                         return (
                           <div
                             key={tp.id}
-                            className="flex items-center gap-1.5 bg-fc-surface px-2.5 py-1 rounded-lg border border-fc-line text-[11.5px] font-semibold text-fc-ink shadow-2xs"
+                            className="flex items-center gap-1.5 bg-fc-surface px-2.5 py-1 rounded-lg text-[11.5px] font-semibold text-fc-ink shadow-2xs"
                           >
                             <Avatar nome={pData.nome} foto={pData.foto} size="w-5 h-5" textSize="text-[9px]" />
                             <span>{pData.nome}</span>
@@ -292,7 +292,7 @@ export default function MatchSummaryDash({
         </div>
 
         {/* MVP / CARA DA RODADA */}
-        <div className="bg-gradient-to-br from-fc-lime/20 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 border border-fc-lime/40 shadow-card flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-fc-lime/20 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <span className="text-[10.5px] font-bold tracking-wider text-fc-dark bg-fc-lime px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 whitespace-nowrap">
@@ -304,7 +304,7 @@ export default function MatchSummaryDash({
             {stats.mvpPlayers.length > 0 ? (
               <div className="space-y-2">
                 {stats.mvpPlayers.map(({ player, gols, assistencias, isWinner }) => (
-                  <div key={player.id} className="flex items-center gap-3 bg-fc-cream/90 p-3 rounded-xl border border-fc-lime/30 shadow-xs">
+                  <div key={player.id} className="flex items-center gap-3 bg-fc-cream/90 p-3 rounded-xl shadow-xs">
                     <Avatar nome={player.nome} foto={player.foto} size="w-12 h-12 md:w-14 md:h-14" textSize="text-[12px]" />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-[15px] md:text-[16px] text-fc-ink truncate">{player.nome}</h3>
@@ -320,7 +320,7 @@ export default function MatchSummaryDash({
                           </span>
                         )}
                         {isWinner && (
-                          <span className="text-[10px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full shrink-0 border border-amber-300/50 flex items-center gap-0.5">
+                          <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
                             <Icon name="trophy" size={9} /> Campeão
                           </span>
                         )}
@@ -339,7 +339,7 @@ export default function MatchSummaryDash({
       {/* ARTILHEIRO E GARÇOM DO DIA */}
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 items-stretch">
         {/* ARTILHEIRO DO DIA */}
-        <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between">
+        <div className="bg-fc-surface rounded-2xl p-3.5 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
               <span className="text-[12px] font-bold text-fc-ink flex items-center gap-1.5">
@@ -355,7 +355,7 @@ export default function MatchSummaryDash({
                 {stats.topScorers.map((g) => {
                   const pData = getPlayerData(g.playerId, g.nome);
                   return (
-                    <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl border border-fc-line/60">
+                    <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl">
                       <Avatar nome={pData.nome} foto={pData.foto} size="w-9 h-9" textSize="text-[10px]" />
                       <span className="font-semibold text-[13px] text-fc-ink flex-1 truncate">{pData.nome}</span>
                       <span className="text-[11px] font-bold text-white bg-fc-coral px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
@@ -372,7 +372,7 @@ export default function MatchSummaryDash({
         </div>
 
         {/* GARÇOM DO DIA */}
-        <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between">
+        <div className="bg-fc-surface rounded-2xl p-3.5 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
               <span className="text-[12px] font-bold text-fc-ink flex items-center gap-1.5">
@@ -388,7 +388,7 @@ export default function MatchSummaryDash({
                 {stats.topAssisters.map((g) => {
                   const pData = getPlayerData(g.playerId, g.nome);
                   return (
-                    <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl border border-fc-line/60">
+                    <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl">
                       <Avatar nome={pData.nome} foto={pData.foto} size="w-9 h-9" textSize="text-[10px]" />
                       <span className="font-semibold text-[13px] text-fc-ink flex-1 truncate">{pData.nome}</span>
                       <span className="text-[11px] font-bold text-white bg-fc-dark/80 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
@@ -406,13 +406,13 @@ export default function MatchSummaryDash({
       </div>
 
       {/* TABELA DE RESULTADOS DOS TIMES */}
-      <div className="bg-fc-surface rounded-2xl p-3.5 md:p-4 border border-fc-line shadow-card space-y-3">
+      <div className="bg-fc-surface rounded-2xl p-3.5 md:p-4 shadow-card space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-[13px] font-bold text-fc-ink flex items-center gap-1.5">
             <Icon name="shield" size={15} className="text-fc-ink/60" /> Classificação Final da Partida
           </h3>
           {canEditStats && (
-            <span className="text-[10px] font-semibold text-fc-muted bg-fc-cream px-2 py-0.5 rounded-md border border-fc-line/50">
+            <span className="text-[10px] font-semibold text-fc-muted bg-fc-cream px-2 py-0.5 rounded-md">
               Toque no jogador p/ editar
             </span>
           )}
@@ -426,8 +426,8 @@ export default function MatchSummaryDash({
             return (
               <div
                 key={team.id}
-                className={`rounded-xl p-3 border transition ${
-                  vitorias > 0 ? 'bg-fc-limesoft/60 border-fc-lime/40' : 'bg-fc-cream/40 border-fc-line/60'
+                className={`rounded-xl p-3 transition ${
+                  vitorias > 0 ? 'bg-fc-limesoft/60' : 'bg-fc-cream/40'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
@@ -470,7 +470,7 @@ export default function MatchSummaryDash({
                         onRemoveAssist={() => onRemoveAssist?.(match.id, tp.id, pData.nome)}
                       >
                         <div
-                          className={`flex items-center gap-1.5 bg-fc-surface px-2.5 py-1 rounded-lg border border-fc-line text-[11.5px] font-semibold text-fc-ink transition ${
+                          className={`flex items-center gap-1.5 bg-fc-surface px-2.5 py-1 rounded-lg shadow-xs text-[11.5px] font-semibold text-fc-ink transition ${
                             canEditStats ? 'active:scale-95 cursor-pointer' : ''
                           }`}
                         >

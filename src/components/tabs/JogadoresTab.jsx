@@ -17,7 +17,7 @@ export default function JogadoresTab({ players, matchHistory, badgesByPlayerId, 
   const totalsById = useMemo(() => computeCareerTotals(matchHistory), [matchHistory]);
 
   const sortedList = useMemo(() => {
-    const withStats = players.map((p) => ({
+    const withStats = players.filter((p) => p.posicaoFixa !== 'Goleiro').map((p) => ({
       player: p,
       totals: totalsById.get(p.id) || { gols: 0, assistencias: 0, presencas: 0, vitorias: 0 },
     }));
@@ -52,7 +52,7 @@ export default function JogadoresTab({ players, matchHistory, badgesByPlayerId, 
               key={p.id}
               type="button"
               onClick={() => onOpenProfile(p)}
-              className="w-full bg-fc-surface hover:bg-fc-cream/60 rounded-xl px-3 py-2 flex items-center gap-2 border border-fc-line active:scale-[0.99] transition text-left group"
+              className="w-full bg-fc-surface hover:bg-fc-cream/60 rounded-xl px-3 py-2 flex items-center gap-2 shadow-xs active:scale-[0.99] transition text-left group"
             >
               <Avatar nome={p.nome} foto={p.foto} size="w-8 h-8" textSize="text-[9px]" />
 

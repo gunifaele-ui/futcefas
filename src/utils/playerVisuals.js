@@ -12,7 +12,7 @@ export function getAvatarStyle() {
 }
 
 export function ratingTone(media) {
-  if (media >= 8) return { text: 'text-emerald-700', bg: 'bg-emerald-50/70', border: 'border-emerald-100', bar: 'bg-emerald-400' };
-  if (media >= 6.5) return { text: 'text-fc-ink/70', bg: 'bg-fc-cream', border: 'border-fc-line', bar: 'bg-fc-lime' };
-  return { text: 'text-fc-coraldark', bg: 'bg-orange-50/60', border: 'border-orange-100', bar: 'bg-fc-coral' };
+  if (media >= 8) return { text: 'text-fc-dark', bg: 'bg-fc-lime/15', border: 'border-fc-lime/30', bar: 'bg-fc-lime' };
+  if (media >= 6.5) return { text: 'text-fc-ink/70', bg: 'bg-fc-cream', border: 'border-fc-line', bar: 'bg-fc-muted/50' };
+  return { text: 'text-fc-coraldark', bg: 'bg-fc-coral/12', border: 'border-fc-coral/25', bar: 'bg-fc-coral' };
 }

@@ -14,7 +14,7 @@ function IconButton({ onClick, title, icon, tone = 'neutral' }) {
   const tones = {
     neutral: 'bg-fc-cream hover:bg-fc-line text-fc-ink/70',
     dark: 'bg-fc-dark hover:bg-fc-dark2 text-white',
-    danger: 'bg-fc-surface hover:bg-orange-50 border border-fc-line text-fc-coraldark',
+    danger: 'bg-fc-surface hover:bg-fc-coral/10 border border-fc-line text-fc-coraldark',
   };
 
   return (
@@ -58,7 +58,7 @@ export default function NotasTab({
 
   return (
     <div className="space-y-3">
-      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card flex items-center justify-between gap-2">
+      <div className="bg-fc-surface rounded-2xl p-4 shadow-card flex items-center justify-between gap-2">
         <div>
           <h2 className="text-[15px] font-semibold text-fc-ink tracking-tight">Mudar nota</h2>
           <p className="text-[11px] text-fc-muted mt-0.5">Nota média formada pela média das notas dos ADMs.</p>
@@ -123,7 +123,7 @@ export default function NotasTab({
             const hasEvolucao = playerBadges.some((b) => b.id === 'em_alta' && b.achieved);
 
             return (
-              <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 border border-fc-line">
+              <div key={p.id} className="bg-fc-surface rounded-xl px-2.5 py-2 flex items-center gap-2 shadow-xs">
                 <button
                   type="button"
                   onClick={() => onOpenProfile(p)}

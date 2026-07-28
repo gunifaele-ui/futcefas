@@ -1103,7 +1103,7 @@ export default function App() {
               <p className="text-[12.5px] font-medium text-fc-ink leading-relaxed">
                 Adicione o <strong>Fut Cefas</strong> à sua tela inicial para acessar como um aplicativo e receber notificações:
               </p>
-              <div className="space-y-2 bg-fc-cream/80 rounded-xl p-3 border border-fc-line/60 text-[11.5px] text-fc-ink">
+              <div className="space-y-2 bg-fc-cream/80 rounded-xl p-3 text-[11.5px] text-fc-ink">
                 <p className="flex items-start gap-2">
                   <span className="font-bold text-fc-coral shrink-0">📱 iPhone (Safari):</span>
                   <span>Toque no botão <strong>Compartilhar</strong> 📤 e escolha <strong>Adicionar à Tela de Início</strong> ➕.</span>

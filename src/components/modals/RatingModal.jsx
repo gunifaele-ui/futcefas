@@ -52,7 +52,7 @@ export default function RatingModal({ player, admins, tempNotes, setTempNotes, c
                       type="button"
                       onClick={() => setTempNotes({ ...tempNotes, [adm.key]: null })}
                       title="Tirar minha nota (não conta na média)"
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-fc-muted hover:text-fc-coraldark hover:bg-orange-50 transition"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-fc-muted hover:text-fc-coraldark hover:bg-fc-coral/10 transition"
                     >
                       <Icon name="trash" size={12} />
                     </button>

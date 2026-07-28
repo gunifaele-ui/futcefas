@@ -91,11 +91,11 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
               <span className="block text-[18px] font-semibold text-fc-ink">{parsed.matched.length}</span>
               <span className="text-[11px] text-fc-ink/60">Reconhecidos</span>
             </div>
-            <div className="bg-fc-cream border border-fc-line rounded-xl py-2.5">
+            <div className="bg-fc-cream rounded-xl py-2.5">
               <span className="block text-[18px] font-semibold text-fc-coraldark">{parsed.avulsosToCreate.length}</span>
               <span className="text-[11px] text-fc-muted">Avulsos novos</span>
             </div>
-            <div className="bg-fc-cream border border-fc-line rounded-xl py-2.5">
+            <div className="bg-fc-cream rounded-xl py-2.5">
               <span className="block text-[18px] font-semibold text-fc-coraldark">{parsed.goleirosToCreate.length}</span>
               <span className="text-[11px] text-fc-muted">Goleiros novos</span>
             </div>
@@ -107,7 +107,7 @@ export default function ImportAttendanceModal({ players, onApply, onClose }) {
                 {parsed.unmatched.length} nome(s) não reconhecido(s) — quem é?
               </span>
               {parsed.unmatched.map((u, idx) => (
-                <div key={idx} className="bg-fc-cream border border-fc-line rounded-xl p-2.5">
+                <div key={idx} className="bg-fc-cream rounded-xl p-2.5">
                   <p className="text-[13px] font-medium text-fc-ink mb-1.5 break-words">"{u.name}"</p>
                   <select
                     className="w-full bg-fc-surface border border-fc-line rounded-lg py-2 px-2.5 text-[12px] font-medium text-fc-ink/80 focus:outline-none focus:border-fc-ink/30"

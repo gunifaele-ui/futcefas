@@ -12,7 +12,7 @@ const INITIAL_COUNT = 2;
 const PAGE_SIZE = 4;
 const INSIGHT_SIZE = 3;
 const RANKING_LIMIT = 5;
-const MIN_PARTICIPATION_GAMES = 3;
+const MIN_PARTICIPATION_GAMES = 1;
 
 
 // Players in matchHistory.teams[].players can be stored as objects {id, nome, ...}
@@ -82,7 +82,7 @@ function InfoTooltip({ text }) {
 
 function StatCard({ icon, title, info, onOpenFull, children }) {
   return (
-    <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card">
+    <div className="bg-fc-surface rounded-2xl p-3.5 shadow-card">
       <div className="flex items-center gap-2 mb-2">
         <Icon name={icon} size={14} className="text-fc-ink/50" />
         <h3 className="text-[12.5px] font-semibold text-fc-ink">{title}</h3>
@@ -115,7 +115,7 @@ const BAR_TONES = {
 };
 
 const CHIP_TONES = {
-  warm: 'text-fc-coraldark bg-orange-50',
+  warm: 'text-fc-coraldark bg-fc-coral/10',
   dark: 'text-fc-ink bg-fc-cream',
   accent: 'text-fc-ink bg-fc-limesoft',
   neutral: 'text-fc-ink/70 bg-fc-cream',
@@ -185,12 +185,12 @@ function RankingCard({ icon, title, info, entries, tone, emptyText, limit = RANK
   );
 }
 
-function LeaderTile({ icon, label, name, value, tone, onClick }) {
+function LeaderTile({ icon, label, name, value, tone, onClick, extraCount = 0 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative bg-fc-surface rounded-2xl p-3 border border-fc-line shadow-card flex items-center gap-2.5 min-w-0 w-full text-left active:scale-[0.98] transition"
+      className="relative bg-fc-surface rounded-2xl p-3 shadow-card flex items-center gap-2.5 min-w-0 w-full text-left active:scale-[0.98] transition"
     >
       <Icon name="chevronDown" size={10} className="absolute top-2.5 right-2.5 text-fc-ink/20 -rotate-90" />
       <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tone}`}>
@@ -200,7 +200,17 @@ function LeaderTile({ icon, label, name, value, tone, onClick }) {
         <p className="text-[9.5px] font-medium text-fc-muted uppercase tracking-wide truncate">{label}</p>
         {name ? (
           <>
-            <p className="text-[12.5px] font-semibold text-fc-ink truncate leading-tight">{name}</p>
+            <p className="text-[12.5px] font-semibold text-fc-ink truncate leading-tight flex items-center gap-1.5">
+              <span className="truncate">{name}</span>
+              {extraCount > 0 && (
+                <span
+                  title={`+${extraCount} ${extraCount === 1 ? 'jogador empatado' : 'jogadores empatados'}`}
+                  className="shrink-0 text-[9px] font-bold text-fc-ink/60 bg-fc-cream rounded-full px-1.5 py-px"
+                >
+                  +{extraCount}
+                </span>
+              )}
+            </p>
             <p className="text-[10px] text-fc-ink/50 font-medium">{value}</p>
           </>
         ) : (
@@ -393,7 +403,6 @@ export default function EstatisticasTab({
     return streaks
       .filter((s) => s.streak > 0)
       .sort((a, b) => b.streak - a.streak)
-      .slice(0, INSIGHT_SIZE)
       .map((s) => ({ label: s.nome, value: s.streak, valueLabel: `${s.streak} ${s.streak === 1 ? 'pelada' : 'peladas'}` }));
   }, [matchHistory, players]);
 
@@ -459,6 +468,9 @@ export default function EstatisticasTab({
     presenca: { title: 'Presenças · Top 10', icon: 'target', tone: 'neutral', entries: attendanceRankingFull.slice(0, TOP_LIST_LIMIT), emptyText: 'Sem dados ainda.' },
   };
 
+  const topWinTieCount = winRanking.filter((e) => e.value === winRanking[0]?.value).length;
+  const topAttendanceTieCount = attendanceRankingFull.filter((e) => e.value === attendanceRankingFull[0]?.value).length;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
@@ -505,6 +517,7 @@ export default function EstatisticasTab({
           value={winRanking[0]?.valueLabel}
           tone="bg-fc-limesoft text-fc-ink"
           onClick={() => setLeaderModalKey('vitorias')}
+          extraCount={Math.max(topWinTieCount - 1, 0)}
         />
         <LeaderTile
           icon="target"
@@ -513,6 +526,7 @@ export default function EstatisticasTab({
           value={attendanceRanking[0]?.valueLabel}
           tone="bg-fc-cream text-fc-ink/70"
           onClick={() => setLeaderModalKey('presenca')}
+          extraCount={Math.max(topAttendanceTieCount - 1, 0)}
         />
       </div>
 
@@ -582,10 +596,10 @@ export default function EstatisticasTab({
         tone="accent"
         entries={participationRanking}
         emptyText="Sem dados ainda."
-        info={`Soma de gols e assistências dividida pelo número de presenças. Considera só quem já jogou pelo menos ${MIN_PARTICIPATION_GAMES} peladas.`}
+        info={`Soma de gols e assistências dividida pelo número de presenças. Considera só quem já jogou pelo menos ${MIN_PARTICIPATION_GAMES} ${MIN_PARTICIPATION_GAMES === 1 ? 'pelada' : 'peladas'}.`}
       />
 
-      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card">
+      <div className="bg-fc-surface rounded-2xl p-4 shadow-card">
         <div className="flex items-center gap-2 mb-2.5">
           <h3 className="text-[13px] font-semibold text-fc-ink">Histórico</h3>
           <InfoTooltip text="Registro dos sorteios já feitos, com os times formados e o resultado de cada pelada." />
@@ -598,7 +612,7 @@ export default function EstatisticasTab({
               const matchCanEditStats = canEditStats(m);
               const isTrailingOdd = i === visibleMatches.length - 1 && visibleMatches.length % 2 === 1;
               return (
-              <div key={m.id} className={`border border-fc-line rounded-xl p-3 ${isTrailingOdd ? 'lg:col-span-2' : ''}`}>
+              <div key={m.id} className={`bg-fc-cream/60 rounded-xl p-3 ${isTrailingOdd ? 'lg:col-span-2' : ''}`}>
                 <div className="flex justify-between items-center mb-2.5 gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     {canEdit ? (
@@ -616,7 +630,7 @@ export default function EstatisticasTab({
                     <button
                       type="button"
                       onClick={() => setSelectedSummaryMatch(m)}
-                      className="text-[11px] font-semibold text-fc-dark hover:text-fc-dark2 bg-fc-limesoft border border-fc-lime/40 px-2 py-0.5 rounded-full flex items-center gap-1 transition active:scale-95 shrink-0"
+                      className="text-[11px] font-semibold text-fc-ink hover:text-fc-ink/70 bg-fc-limesoft px-2 py-0.5 rounded-full flex items-center gap-1 transition active:scale-95 shrink-0"
                     >
                       <Icon name="chart" size={11} /> Ver Resumo
                     </button>
@@ -624,7 +638,7 @@ export default function EstatisticasTab({
                   {canEdit && (
                     <button
                       onClick={() => onRequestDeleteMatch(m.id)}
-                      className="w-6 h-6 shrink-0 rounded-lg hover:bg-orange-50 text-fc-muted hover:text-fc-coraldark flex items-center justify-center transition"
+                      className="w-6 h-6 shrink-0 rounded-lg hover:bg-fc-coral/10 text-fc-muted hover:text-fc-coraldark flex items-center justify-center transition"
                       title="Excluir sorteio"
                     >
                       <Icon name="trash" size={13} />
@@ -638,7 +652,7 @@ export default function EstatisticasTab({
                     return (
                       <div
                         key={t.id}
-                        className={`rounded-lg p-2 border ${vitorias > 0 ? 'bg-fc-limesoft border-fc-lime/40' : 'border-fc-line'}`}
+                        className={`rounded-lg p-2 ${vitorias > 0 ? 'bg-fc-limesoft' : 'bg-fc-cream/60'}`}
                       >
                         <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
                           <span className="text-[12px] font-medium text-fc-ink">{t.name}</span>
@@ -674,7 +688,7 @@ export default function EstatisticasTab({
                                 onRemoveAssist={() => onRemoveAssist(m.id, p.id, p.nome)}
                               >
                                 <span
-                                  className={`text-[11px] font-medium text-fc-ink/80 bg-fc-surface border border-fc-line rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1 transition ${
+                                  className={`text-[11px] font-medium text-fc-ink/80 bg-fc-surface rounded-full pl-2 pr-1.5 py-0.5 flex items-center gap-1 shadow-xs transition ${
                                     matchCanEditStats ? 'active:scale-95' : ''
                                   }`}
                                 >

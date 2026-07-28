@@ -49,7 +49,7 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
   const extra = players.length - shown.length;
 
   return (
-    <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden">
+    <div className="bg-fc-surface rounded-2xl shadow-card overflow-hidden">
       <div className="relative aspect-[3/4] bg-fc-cream">
         <TiedBadgeChip badgeIcon={badgeIcon} badgeLabel={badgeLabel} mainValue={mainValue} mainUnit={mainUnit} chip={chip} />
         <div className="absolute inset-0 pt-9 pb-2 px-2 grid grid-cols-2 gap-1.5 auto-rows-fr">
@@ -58,7 +58,7 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
             return (
               <div
                 key={p.id || p.nome}
-                className={`rounded-xl bg-fc-surface border border-fc-line flex flex-col items-center justify-center gap-1 p-1 min-w-0 ${
+                className={`rounded-xl bg-fc-surface shadow-xs flex flex-col items-center justify-center gap-1 p-1 min-w-0 ${
                   isLastOdd ? 'col-span-2' : ''
                 }`}
               >
@@ -71,7 +71,7 @@ function TiedSpotlightCard({ badgeIcon, badgeLabel, tone, players, mainValue, ma
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="rounded-xl bg-fc-cream border border-fc-line flex items-center justify-center text-[13px] font-bold text-fc-ink/60 active:scale-95 transition"
+              className="rounded-xl bg-fc-surface shadow-xs flex items-center justify-center text-[13px] font-bold text-fc-ink/60 active:scale-95 transition"
             >
               +{extra}
             </button>
@@ -104,7 +104,7 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
 
   if (!player) {
     return (
-      <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden flex flex-col">
+      <div className="bg-fc-surface rounded-2xl shadow-card overflow-hidden flex flex-col">
         <div className="aspect-[3/4] bg-fc-cream flex items-center justify-center">
           <Icon name={badgeIcon} size={22} className="text-fc-ink/15" />
         </div>
@@ -117,7 +117,7 @@ export default function PlayerSpotlightCard({ badgeIcon, badgeLabel, tone = 'dar
   }
 
   return (
-    <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card overflow-hidden">
+    <div className="bg-fc-surface rounded-2xl shadow-card overflow-hidden">
       <div className="relative aspect-[3/4]">
         <GamePhoto nome={player.nome} fotoJogo={player.fotoJogo} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30" />

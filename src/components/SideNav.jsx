@@ -13,7 +13,7 @@ export default function SideNav({ isAdmin, activeTab, onChangeTab }) {
             key={tab.key}
             onClick={() => onChangeTab(tab.key)}
             className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition text-left ${
-              active ? 'bg-fc-surface border border-fc-line shadow-card' : 'hover:bg-fc-surface/60'
+              active ? 'bg-fc-surface shadow-card' : 'hover:bg-fc-surface/60'
             }`}
           >
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition ${active ? 'bg-fc-limesoft text-fc-ink' : 'bg-fc-surface text-fc-muted'}`}>

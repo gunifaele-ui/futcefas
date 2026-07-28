@@ -93,7 +93,7 @@ export default function PresencaTab({
 
   return (
     <div className="space-y-3">
-      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card">
+      <div className="bg-fc-surface rounded-2xl p-4 shadow-card">
         <div className="flex justify-between items-center mb-1 gap-2">
           <div>
             <h2 className="text-[15px] font-semibold text-fc-ink tracking-tight">Lista de quem vai</h2>
@@ -142,7 +142,7 @@ export default function PresencaTab({
       <div
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, 'Goleiro')}
-        className="bg-fc-surface border border-fc-line rounded-2xl p-3.5 shadow-card"
+        className="bg-fc-surface rounded-2xl p-3.5 shadow-card"
       >
         <div className="flex items-center justify-between mb-2.5 gap-2">
           <span className="text-[12px] font-medium text-fc-ink/70 flex items-center gap-1.5">
@@ -165,7 +165,7 @@ export default function PresencaTab({
               subLabel="GK"
               subLabelColor="text-fc-muted"
               palette={{
-                active: 'bg-orange-50/60 border-fc-coral/30 text-fc-ink',
+                active: 'bg-fc-coral/10 border-fc-coral/30 text-fc-ink',
                 inactive: 'bg-fc-surface border-fc-line text-fc-muted',
               }}
             />
@@ -176,7 +176,7 @@ export default function PresencaTab({
       <div
         onDragOver={onDragOver}
         onDrop={(e) => onDrop(e, 'Linha')}
-        className="bg-fc-surface border border-fc-line rounded-2xl p-3.5 shadow-card"
+        className="bg-fc-surface rounded-2xl p-3.5 shadow-card"
       >
         <div className="flex items-center justify-between mb-1 gap-2">
           <span className="text-[12px] font-medium text-fc-ink/70 flex items-center gap-1.5">

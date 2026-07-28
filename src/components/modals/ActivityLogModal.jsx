@@ -71,7 +71,7 @@ export default function ActivityLogModal({ activityLog, admins, onClose }) {
       ) : (
         <div className="space-y-2">
           {visibleEntries.map((entry) => (
-            <div key={entry.id} className="border border-fc-line rounded-xl p-3">
+            <div key={entry.id} className="bg-fc-cream rounded-xl p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-medium text-fc-ink leading-snug">
                   {entry.compiledMessage ? (

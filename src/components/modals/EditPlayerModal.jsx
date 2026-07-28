@@ -58,7 +58,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               <button
                 type="button"
                 onClick={() => setFoto('')}
-                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
+                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-fc-coral/10 px-3 py-1.5 rounded-lg transition"
               >
                 Remover
               </button>
@@ -85,7 +85,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               <button
                 type="button"
                 onClick={() => setFotoJogo('')}
-                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-orange-50 px-3 py-1.5 rounded-lg transition"
+                className="text-[12px] font-medium text-fc-coraldark bg-fc-surface border border-fc-line hover:bg-fc-coral/10 px-3 py-1.5 rounded-lg transition"
               >
                 Remover
               </button>

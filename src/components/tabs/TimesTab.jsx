@@ -127,7 +127,7 @@ function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, on
   const vitorias = matchTeam?.vitorias || 0;
 
   return (
-    <div className="bg-fc-surface rounded-2xl p-3 md:p-4 border border-fc-line shadow-card">
+    <div className="bg-fc-surface rounded-2xl p-3 md:p-4 shadow-card">
       <div className="flex items-center justify-between mb-2.5 md:mb-3.5 gap-1.5 flex-wrap">
         <span className="font-semibold text-[14px] md:text-[16px] text-fc-ink shrink-0">{team.name}</span>
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -226,7 +226,7 @@ export default function TimesTab({
 
   return (
     <div className="space-y-2.5">
-      <div className="bg-fc-surface rounded-2xl border border-fc-line shadow-card divide-y divide-fc-line">
+      <div className="bg-fc-surface rounded-2xl shadow-card divide-y divide-fc-line">
         {showPixCard && <PixRow />}
 
         {teamsDrafted ? (
@@ -295,14 +295,14 @@ export default function TimesTab({
           ))}
         </div>
       ) : (
-        <div className="bg-fc-surface rounded-2xl p-8 border border-fc-line shadow-card flex flex-col items-center gap-2.5 text-center">
+        <div className="bg-fc-surface rounded-2xl p-8 shadow-card flex flex-col items-center gap-2.5 text-center">
           <Icon name="shield" size={26} className="text-fc-muted" strokeWidth={1.4} />
           <p className="text-[12px] text-fc-muted">Os times aparecem aqui, lado a lado, assim que forem sorteados.</p>
         </div>
       )}
 
       {teamsDrafted && (
-        <div className="bg-fc-surface rounded-2xl px-3.5 py-2.5 border border-fc-line shadow-card flex items-center flex-wrap gap-x-2 gap-y-1">
+        <div className="bg-fc-surface rounded-2xl px-3.5 py-2.5 shadow-card flex items-center flex-wrap gap-x-2 gap-y-1">
           <span className="text-[12px] font-medium text-fc-muted flex items-center gap-1.5 shrink-0">
             <Icon name="gloves" size={14} /> Goleiros
           </span>

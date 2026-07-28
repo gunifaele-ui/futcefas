@@ -29,7 +29,7 @@ export default function SearchModal({ searchQuery, setSearchQuery, filteredList,
               <div
                 key={p.id}
                 onClick={() => onSelectPlayer(p.id)}
-                className="p-2.5 rounded-xl bg-fc-surface border border-fc-line flex justify-between items-center cursor-pointer hover:bg-fc-cream transition gap-2"
+                className="p-2.5 rounded-xl bg-fc-surface shadow-xs flex justify-between items-center cursor-pointer hover:bg-fc-cream transition gap-2"
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <Avatar nome={p.nome} foto={p.foto} size="w-7 h-7" textSize="text-[9px]" />
