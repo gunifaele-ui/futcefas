@@ -850,6 +850,7 @@ export default function App() {
               onAddResult={handleAddResult}
               onRemoveResult={handleRemoveResult}
               onRequestFinalize={() => safeMatchHistory[0] && setMatchPendingFinalize(safeMatchHistory[0].id)}
+              badgesByPlayerId={badgesByPlayerId}
               presencaProps={{
                 players: safePlayers,
                 isViewer,

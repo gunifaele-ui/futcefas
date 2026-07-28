@@ -46,7 +46,7 @@ export default function JogadoresTab({ players, matchHistory, badgesByPlayerId, 
 
       <div className="space-y-1.5">
         {sortedList.map(({ player: p, totals }) => {
-          const playerBadges = (badgesByPlayerId?.get(p.id) || []).filter((b) => b.achieved);
+          const playerBadges = (badgesByPlayerId?.get(p.id) || []).filter((b) => b.achieved && b.id !== 'estreante');
           return (
             <button
               key={p.id}

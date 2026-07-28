@@ -47,7 +47,7 @@ export default function PlayerProfileModal({ player, badges = [], matchHistory =
   if (!player) return null;
 
   const isGoleiro = player.posicaoFixa === 'Goleiro';
-  const achievedBadges = useMemo(() => (Array.isArray(badges) ? badges.filter((b) => b?.achieved) : []), [badges]);
+  const achievedBadges = useMemo(() => (Array.isArray(badges) ? badges.filter((b) => b?.achieved && b?.id !== 'estreante') : []), [badges]);
   const topBadge = getTopBadge(badges);
   const openBadge = achievedBadges.find((b) => b?.id === openBadgeId) || null;
 

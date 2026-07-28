@@ -60,11 +60,12 @@ function InfoStaticRow({ icon, children }) {
   );
 }
 
-function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist }) {
+function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist, badgesByPlayerId }) {
   const gols = statEntry?.gols || 0;
   const assistencias = statEntry?.assistencias || 0;
   const hasStat = gols > 0 || assistencias > 0;
   const canInteract = canEdit && !!matchId;
+  const isEstreante = (badgesByPlayerId?.get(p.id) || []).some((b) => b.id === 'estreante' && b.achieved);
 
   return (
     <PlayerStatTrigger
@@ -83,7 +84,10 @@ function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemov
         }`}
       >
         <Avatar nome={p.nome} foto={p.foto} size="w-9 h-9 md:w-12 md:h-12" textSize="text-[10px] md:text-[12px]" />
-        <span className="text-[10px] md:text-[12px] font-medium text-fc-ink/80 text-center leading-tight break-words w-full px-0.5">{p.nome}</span>
+        <span className="text-[10px] md:text-[12px] font-medium text-fc-ink/80 text-center leading-tight break-words w-full px-0.5 flex items-center justify-center gap-0.5">
+          <span>{p.nome}</span>
+          {isEstreante && <span title="Estreante (Primeira pelada!)" className="text-[11px] leading-none shrink-0">🐣</span>}
+        </span>
         {hasStat && (
           <span className="flex items-center gap-1 flex-wrap justify-center">
             {gols > 0 && (
@@ -103,7 +107,7 @@ function PlayerCell({ player: p, canEdit, matchId, statEntry, onAddGoal, onRemov
   );
 }
 
-function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist, onAddResult, onRemoveResult }) {
+function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, onRemoveGoal, onAddAssist, onRemoveAssist, onAddResult, onRemoveResult, badgesByPlayerId }) {
   const forca = team.players.length > 0 ? (team.ratingSum / team.players.length).toFixed(2) : '0.00';
   const vitorias = matchTeam?.vitorias || 0;
 
@@ -142,6 +146,7 @@ function TeamCard({ team, matchId, matchTeam, matchGoals, canEdit, onAddGoal, on
             onRemoveGoal={onRemoveGoal}
             onAddAssist={onAddAssist}
             onRemoveAssist={onRemoveAssist}
+            badgesByPlayerId={badgesByPlayerId}
           />
         ))}
       </div>
@@ -171,6 +176,7 @@ export default function TimesTab({
   onRemoveResult,
   onRequestFinalize,
   presencaProps,
+  badgesByPlayerId,
   showSummaryDash,
   summaryMatch,
   onStartNextFut,
@@ -269,6 +275,7 @@ export default function TimesTab({
               onRemoveAssist={onRemoveAssist}
               onAddResult={onAddResult}
               onRemoveResult={onRemoveResult}
+              badgesByPlayerId={badgesByPlayerId}
             />
           ))}
         </div>

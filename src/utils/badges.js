@@ -465,7 +465,7 @@ export function computeBadgesForPlayers(players, matchHistory, ratingHistory = [
 
 export function getTopBadge(badges) {
   if (!Array.isArray(badges)) return null;
-  return badges.find((b) => b?.achieved) || null;
+  return badges.find((b) => b?.achieved && b?.id !== 'estreante') || null;
 }
 
 function computeQuarterAwardsHistory(matchHistory = []) {
