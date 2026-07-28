@@ -178,90 +178,80 @@ export default function MatchSummaryDash({
 
   return (
     <div className="space-y-3.5 animate-fadeIn">
-      {/* Top Header do Resumo */}
-      <div className="bg-gradient-to-r from-fc-dark via-fc-dark2 to-fc-dark text-white rounded-3xl p-4 md:p-5 shadow-xl border border-fc-line/20 relative overflow-hidden">
-        <div className="absolute -right-8 -top-8 w-36 h-36 bg-fc-lime/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-9 h-9 rounded-2xl bg-fc-lime/20 text-fc-lime flex items-center justify-center font-bold text-[16px] shrink-0">
-              📊
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-[16px] md:text-[18px] font-bold text-white tracking-tight truncate">Resumo Geral do Fut</h2>
-              <p className="text-[11.5px] text-white/70 capitalize truncate">{formattedDate}</p>
-            </div>
-          </div>
-          {isModal && onClose && (
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition shrink-0"
-            >
-              <Icon name="x" size={16} />
-            </button>
-          )}
+      {/* Header do Resumo */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-[23px] md:text-[27px] font-extrabold text-fc-ink tracking-tight leading-tight truncate">Resumo Geral do Fut</h2>
+          <p className="text-[12.5px] text-fc-muted font-medium capitalize truncate mt-0.5">{formattedDate}</p>
         </div>
-
-        {/* Botão ADM para iniciar o próximo Fut */}
-        {isAdmin && !isViewer && onStartNextFut && !isModal && (
-          <div className="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-[11.5px] text-fc-lime font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-fc-lime animate-ping" />
-              Pronto para a próxima pelada?
-            </p>
-            <button
-              onClick={onStartNextFut}
-              className="w-full sm:w-auto bg-fc-lime hover:bg-fc-lime/90 text-fc-dark font-bold text-[12.5px] px-3.5 py-2 rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5"
-            >
-              <Icon name="plus" size={15} /> Abrir Nova Chamada
-            </button>
-          </div>
+        {isModal && onClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-fc-cream hover:bg-fc-line text-fc-ink/60 flex items-center justify-center transition shrink-0"
+          >
+            <Icon name="x" size={16} />
+          </button>
         )}
       </div>
+
+      {/* Botão ADM para iniciar o próximo Fut */}
+      {isAdmin && !isViewer && onStartNextFut && !isModal && (
+        <div className="bg-fc-dark rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <p className="text-[12px] text-fc-lime font-medium flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-fc-lime animate-ping" />
+            Pronto para a próxima pelada?
+          </p>
+          <button
+            onClick={onStartNextFut}
+            className="w-full sm:w-auto bg-fc-lime hover:bg-fc-lime/90 text-fc-dark font-bold text-[12.5px] px-3.5 py-2 rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5"
+          >
+            <Icon name="plus" size={15} /> Abrir Nova Chamada
+          </button>
+        </div>
+      )}
 
       {/* Banner do Relógio de Edição (24h) */}
       {isMatchFinalized && (
         <div
-          className={`rounded-2xl p-3 border flex items-center justify-between gap-2.5 shadow-xs transition ${
-            timeLeftMs > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-950' : 'bg-fc-cream border-fc-line text-fc-muted'
+          className={`rounded-2xl p-3 border flex items-center gap-2.5 shadow-xs transition ${
+            timeLeftMs > 0 ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-fc-cream border-fc-line text-fc-muted'
           }`}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span
-              className={`w-7 h-7 rounded-xl flex items-center justify-center text-[15px] shrink-0 ${
-                timeLeftMs > 0 ? 'bg-amber-500/20 text-amber-800' : 'bg-fc-surface text-fc-muted'
-              }`}
-            >
-              {timeLeftMs > 0 ? '⏱️' : '🔒'}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[12px] font-bold tracking-tight">
-                  {timeLeftMs > 0 ? 'Edição pós-jogo liberada' : 'Edição encerrada (24h ultrapassadas)'}
+          <span
+            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              timeLeftMs > 0 ? 'bg-amber-200 text-amber-700' : 'bg-fc-surface text-fc-muted'
+            }`}
+          >
+            <Icon name={timeLeftMs > 0 ? 'clock' : 'lock'} size={15} />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12.5px] font-bold tracking-tight">
+                {timeLeftMs > 0 ? 'Edição pós-jogo liberada' : 'Edição encerrada (24h ultrapassadas)'}
+              </span>
+              {timeLeftMs > 0 && formattedCountdown && (
+                <span className="text-[9.5px] font-extrabold bg-amber-300/70 text-amber-900 px-2 py-0.5 rounded-full whitespace-nowrap">
+                  {formattedCountdown} restantes
                 </span>
-                {timeLeftMs > 0 && formattedCountdown && (
-                  <span className="text-[9.5px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300 whitespace-nowrap">
-                    {formattedCountdown} restantes
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] opacity-80 mt-0.5 truncate">
-                {timeLeftMs > 0
-                  ? 'Edite vitórias, gols e assistências na classificação abaixo.'
-                  : 'Prazo encerrado. Apenas ADMs podem alterar os dados.'}
-              </p>
+              )}
             </div>
+            <p className="text-[11.5px] opacity-80 mt-0.5">
+              {timeLeftMs > 0
+                ? 'Edite vitórias, gols e assistências na classificação abaixo.'
+                : 'Prazo encerrado. Apenas ADMs podem alterar os dados.'}
+            </p>
           </div>
         </div>
       )}
 
       {/* HERO SPOTLIGHTS (Campeão e MVP) */}
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 items-stretch">
-        {/* 🏆 CAMPEÃO DO DIA */}
+        {/* CAMPEÃO DO DIA */}
         <div className="bg-gradient-to-br from-amber-500/10 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 border border-amber-500/30 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <span className="text-[10.5px] font-bold tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 border border-amber-300/50 whitespace-nowrap">
-                🏆 Campeão do Dia
+                <Icon name="trophy" size={11} /> Campeão do Dia
               </span>
               <span className="text-[11px] font-extrabold text-amber-900 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30 whitespace-nowrap">
                 {stats.maxVitorias} {stats.maxVitorias === 1 ? 'Vitória' : 'Vitórias'}
@@ -301,12 +291,12 @@ export default function MatchSummaryDash({
           </div>
         </div>
 
-        {/* ⭐ MVP / CARA DA RODADA */}
+        {/* MVP / CARA DA RODADA */}
         <div className="bg-gradient-to-br from-fc-lime/20 via-fc-surface to-fc-surface rounded-2xl p-3.5 md:p-4 border border-fc-lime/40 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <span className="text-[10.5px] font-bold tracking-wider text-fc-dark bg-fc-lime px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 whitespace-nowrap">
-                ⭐ Cara da Rodada (MVP)
+                <Icon name="star" size={11} /> Cara da Rodada (MVP)
               </span>
               <span className="text-[11px] font-semibold text-fc-ink/60">Destaque Geral</span>
             </div>
@@ -330,8 +320,8 @@ export default function MatchSummaryDash({
                           </span>
                         )}
                         {isWinner && (
-                          <span className="text-[10px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full shrink-0 border border-amber-300/50">
-                            🏆 Campeão
+                          <span className="text-[10px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full shrink-0 border border-amber-300/50 flex items-center gap-0.5">
+                            <Icon name="trophy" size={9} /> Campeão
                           </span>
                         )}
                       </div>
@@ -348,7 +338,7 @@ export default function MatchSummaryDash({
 
       {/* ARTILHEIRO E GARÇOM DO DIA */}
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 items-stretch">
-        {/* ⚽ ARTILHEIRO DO DIA */}
+        {/* ARTILHEIRO DO DIA */}
         <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
@@ -368,8 +358,8 @@ export default function MatchSummaryDash({
                     <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl border border-fc-line/60">
                       <Avatar nome={pData.nome} foto={pData.foto} size="w-9 h-9" textSize="text-[10px]" />
                       <span className="font-semibold text-[13px] text-fc-ink flex-1 truncate">{pData.nome}</span>
-                      <span className="text-[11px] font-bold text-white bg-fc-coral px-2 py-0.5 rounded-full shrink-0">
-                        ⚽ {g.gols}
+                      <span className="text-[11px] font-bold text-white bg-fc-coral px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
+                        <Icon name="ball" size={10} /> {g.gols}
                       </span>
                     </div>
                   );
@@ -381,7 +371,7 @@ export default function MatchSummaryDash({
           </div>
         </div>
 
-        {/* 🎩 GARÇOM DO DIA */}
+        {/* GARÇOM DO DIA */}
         <div className="bg-fc-surface rounded-2xl p-3.5 border border-fc-line shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
@@ -401,8 +391,8 @@ export default function MatchSummaryDash({
                     <div key={g.playerId} className="flex items-center gap-2.5 bg-fc-cream/60 p-2.5 rounded-xl border border-fc-line/60">
                       <Avatar nome={pData.nome} foto={pData.foto} size="w-9 h-9" textSize="text-[10px]" />
                       <span className="font-semibold text-[13px] text-fc-ink flex-1 truncate">{pData.nome}</span>
-                      <span className="text-[11px] font-bold text-white bg-fc-dark/80 px-2 py-0.5 rounded-full shrink-0">
-                        🎩 {g.assistencias}
+                      <span className="text-[11px] font-bold text-white bg-fc-dark/80 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
+                        <Icon name="assist" size={10} /> {g.assistencias}
                       </span>
                     </div>
                   );

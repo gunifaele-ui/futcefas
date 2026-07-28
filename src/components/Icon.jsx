@@ -14,6 +14,7 @@ const PATHS = {
   refresh: <><path d="M20 12a8 8 0 10-2.5 5.8" /><path d="M20 5v6h-6" /></>,
   copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 012-2h9" /></>,
   check: <path d="M5 13l4 4L19 7" />,
+  x: <path d="M6 6l12 12M18 6L6 18" />,
   clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
   trophy: <><path d="M7 4h10v5a5 5 0 01-10 0V4z" /><path d="M7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3" /><path d="M12 14v4M9 20h6" /></>,
   gloves: <><path d="M8 21V11a2 2 0 014 0V6a1.5 1.5 0 013 0v5" /><path d="M15 11V7.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6H8" /></>,
