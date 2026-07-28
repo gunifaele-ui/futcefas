@@ -1,7 +1,18 @@
 import Icon from './Icon';
 import { getAdminLabel } from '../utils/adminLabels';
 
-export default function Header({ isAdmin, currentAdmin, admins, onLogoClick, onLeaveAdmin, hasUnreadActivity, onOpenActivityLog, onOpenSettings }) {
+export default function Header({
+  isAdmin,
+  currentAdmin,
+  admins,
+  onLogoClick,
+  onLeaveAdmin,
+  hasUnreadActivity,
+  onOpenActivityLog,
+  onOpenSettings,
+  canInstallPwa = false,
+  onInstallApp,
+}) {
   const isViewerRole = currentAdmin === 'visualização';
 
   return (
@@ -32,6 +43,18 @@ export default function Header({ isAdmin, currentAdmin, admins, onLogoClick, onL
                 <Icon name="settings" size={15} />
               </button>
             </>
+          )}
+
+          {canInstallPwa && (
+            <button
+              onClick={onInstallApp}
+              title="Instalar App na tela inicial"
+              className="bg-fc-lime/15 hover:bg-fc-lime/25 text-fc-lime border border-fc-lime/30 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition active:scale-95 shrink-0 shadow-xs"
+            >
+              <Icon name="download" size={13} />
+              <span className="hidden sm:inline">Instalar app</span>
+              <span className="sm:hidden">Instalar</span>
+            </button>
           )}
         </div>
 

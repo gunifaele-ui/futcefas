@@ -146,8 +146,51 @@ export default function App() {
   const [systemAlert, setSystemAlert] = useState({ show: false, message: '', type: 'info' });
   const [copied, setCopied] = useState(false);
   const [undoState, setUndoState] = useState(null);
-  const undoTimerRef = useRef(null);
   const [profileTargetPlayer, setProfileTargetPlayer] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showInstallGuideModal, setShowInstallGuideModal] = useState(false);
+
+  useEffect(() => {
+    const checkStandalone = () => {
+      const isStandaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://');
+      setIsStandalone(isStandaloneMode);
+    };
+
+    checkStandalone();
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch (err) {
+        console.log('Notification permission error:', err);
+      }
+    }
+
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        triggerAlert('Aplicativo adicionado à tela de início com sucesso!', 'success');
+      }
+      setDeferredPrompt(null);
+    } else {
+      setShowInstallGuideModal(true);
+    }
+  };
 
   const badgesByPlayerId = useMemo(
     () => computeBadgesForPlayers(safePlayers, safeMatchHistory, safeRatingHistory),
@@ -807,6 +850,8 @@ export default function App() {
         hasUnreadActivity={hasUnreadActivity}
         onOpenActivityLog={handleOpenActivityLog}
         onOpenSettings={() => setShowSettingsModal(true)}
+        canInstallPwa={!isStandalone}
+        onInstallApp={handleInstallApp}
       />
 
       <div className="flex-1 flex md:flex-row md:items-start md:gap-6 md:max-w-6xl md:w-full md:mx-auto md:px-6 md:py-6">
@@ -1045,6 +1090,33 @@ export default function App() {
           icon="lock"
           onConfirm={() => handleFinalizeMatch(matchPendingFinalize)}
           onClose={() => setMatchPendingFinalize(null)}
+        />
+      )}
+
+      {showInstallGuideModal && (
+        <ConfirmActionModal
+          title="Instalar App no Celular"
+          message={
+            <div className="text-left space-y-2.5">
+              <p className="text-[12.5px] font-medium text-fc-ink leading-relaxed">
+                Adicione o <strong>Fut Cefas</strong> à sua tela inicial para acessar como um aplicativo e receber notificações:
+              </p>
+              <div className="space-y-2 bg-fc-cream/80 rounded-xl p-3 border border-fc-line/60 text-[11.5px] text-fc-ink">
+                <p className="flex items-start gap-2">
+                  <span className="font-bold text-fc-coral shrink-0">📱 iPhone (Safari):</span>
+                  <span>Toque no botão <strong>Compartilhar</strong> 📤 e escolha <strong>Adicionar à Tela de Início</strong> ➕.</span>
+                </p>
+                <p className="flex items-start gap-2 pt-2 border-t border-fc-line/40">
+                  <span className="font-bold text-fc-lime shrink-0">🤖 Android (Chrome):</span>
+                  <span>Toque nos <strong>3 pontinhos</strong> ⁝ e escolha <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.</span>
+                </p>
+              </div>
+            </div>
+          }
+          confirmLabel="Entendido"
+          icon="download"
+          onConfirm={() => setShowInstallGuideModal(false)}
+          onClose={() => setShowInstallGuideModal(false)}
         />
       )}
     </div>
