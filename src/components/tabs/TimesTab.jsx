@@ -187,7 +187,14 @@ export default function TimesTab({
         players={players}
         isAdmin={isAdmin}
         isViewer={isViewer}
+        canEditStats={canEditStats}
         onStartNextFut={onStartNextFut}
+        onAddGoal={onAddGoal}
+        onRemoveGoal={onRemoveGoal}
+        onAddAssist={onAddAssist}
+        onRemoveAssist={onRemoveAssist}
+        onAddResult={onAddResult}
+        onRemoveResult={onRemoveResult}
       />
     );
   }

@@ -647,8 +647,17 @@ export default function EstatisticasTab({
           <MatchSummaryDash
             match={selectedSummaryMatch}
             players={players}
+            isAdmin={isAdmin}
+            isViewer={isViewer}
+            canEditStats={canEditStats(selectedSummaryMatch)}
             isModal
             onClose={() => setSelectedSummaryMatch(null)}
+            onAddGoal={onAddGoal}
+            onRemoveGoal={onRemoveGoal}
+            onAddAssist={onAddAssist}
+            onRemoveAssist={onRemoveAssist}
+            onAddResult={onAddResult}
+            onRemoveResult={onRemoveResult}
           />
         </BottomSheet>
       )}

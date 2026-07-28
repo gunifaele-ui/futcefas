@@ -109,13 +109,12 @@ export default function App() {
   const isRealAdmin = isAdmin && !isViewer;
   const [matchPendingFinalize, setMatchPendingFinalize] = useState(null);
 
-  // Um jogo fica travado pra quem não é ADM assim que um ADM finaliza manualmente,
-  // ou automaticamente depois de 1 dia da hora em que o time foi tirado.
+  // Um jogo fica travado pra quem não é ADM 24h após sua finalização (ou criação).
   function isMatchLocked(match) {
     if (!match) return false;
-    if (match.finalizado) return true;
-    if (!match.date) return false;
-    const matchTime = new Date(match.date).getTime();
+    const refTimeStr = match.finalizadoEm || match.date;
+    if (!refTimeStr) return false;
+    const matchTime = new Date(refTimeStr).getTime();
     if (isNaN(matchTime)) return false;
     return Date.now() - matchTime > MATCH_EDIT_WINDOW_MS;
   }
@@ -569,7 +568,7 @@ export default function App() {
     setTeamsDrafted(false);
     setGeneratedTeams([]);
     setAdmPrepActive(false);
-    triggerAlert('Jogo finalizado! Só ADMs podem editar esse jogo agora.', 'success');
+    triggerAlert('Jogo finalizado! A edição de estatísticas fica aberta por 24h.', 'success');
     logActivity('finalizou o jogo atual');
   };
 
@@ -1040,7 +1039,7 @@ export default function App() {
       {matchPendingFinalize && (
         <ConfirmActionModal
           title="Finalizar jogo"
-          message="Depois de finalizado, só ADMs vão poder editar gols, assistências e vitórias desse jogo. Tem certeza?"
+          message="Depois de finalizado, as estatísticas de gols, assistências e vitórias ainda podem ser alteradas durante 24h. Tem certeza?"
           confirmLabel="Finalizar jogo"
           icon="lock"
           onConfirm={() => handleFinalizeMatch(matchPendingFinalize)}

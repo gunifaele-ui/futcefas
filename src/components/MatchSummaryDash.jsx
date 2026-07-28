@@ -1,16 +1,71 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from './Icon';
 import Avatar from './Avatar';
+import ResultChip from './ResultChip';
+import PlayerStatTrigger from './PlayerStatTrigger';
+
+function useMatchCountdown(match) {
+  const [timeLeftMs, setTimeLeftMs] = useState(0);
+
+  useEffect(() => {
+    if (!match) {
+      setTimeLeftMs(0);
+      return;
+    }
+    const calcTime = () => {
+      const refDateStr = match.finalizadoEm || match.date;
+      if (!refDateStr) return 0;
+      const refTime = new Date(refDateStr).getTime();
+      if (isNaN(refTime)) return 0;
+      const deadline = refTime + 24 * 60 * 60 * 1000;
+      return Math.max(0, deadline - Date.now());
+    };
+
+    setTimeLeftMs(calcTime());
+    const interval = setInterval(() => {
+      const ms = calcTime();
+      setTimeLeftMs(ms);
+      if (ms <= 0) clearInterval(interval);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [match]);
+
+  return timeLeftMs;
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return null;
+  const totalSec = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m ${seconds}s`;
+}
 
 export default function MatchSummaryDash({
   match,
   players = [],
   isAdmin = false,
   isViewer = false,
+  canEditStats = false,
   onStartNextFut,
   onClose,
   isModal = false,
+  onAddResult,
+  onRemoveResult,
+  onAddGoal,
+  onRemoveGoal,
+  onAddAssist,
+  onRemoveAssist,
 }) {
+  const timeLeftMs = useMatchCountdown(match);
+  const formattedCountdown = formatCountdown(timeLeftMs);
+  const isMatchFinalized = match?.finalizado === true;
+
   const stats = useMemo(() => {
     if (!match) return null;
 
@@ -161,6 +216,40 @@ export default function MatchSummaryDash({
         )}
       </div>
 
+      {/* Banner do Relógio de Edição (24h) */}
+      {isMatchFinalized && (
+        <div
+          className={`rounded-2xl p-3 border flex items-start justify-between gap-2.5 shadow-sm transition ${
+            timeLeftMs > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-950' : 'bg-fc-cream border-fc-line text-fc-muted'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className={`w-8 h-8 rounded-xl flex items-center justify-center text-[16px] shrink-0 ${
+                timeLeftMs > 0 ? 'bg-amber-500/20 text-amber-800' : 'bg-fc-surface text-fc-muted'
+              }`}
+            >
+              {timeLeftMs > 0 ? '⏱️' : '🔒'}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[12.5px] font-bold tracking-tight flex items-center gap-1.5 flex-wrap">
+                <span>{timeLeftMs > 0 ? 'Edição pós-jogo liberada' : 'Edição encerrada (24h ultrapassadas)'}</span>
+                {timeLeftMs > 0 && formattedCountdown && (
+                  <span className="text-[10px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300">
+                    {formattedCountdown} restantes
+                  </span>
+                )}
+              </p>
+              <p className="text-[11px] opacity-85 mt-0.5">
+                {timeLeftMs > 0
+                  ? 'Você pode ajustar vitórias, gols e assistências na classificação abaixo durante 24h após o término.'
+                  : 'Passaram mais de 24 horas da finalização. Apenas Administradores podem alterar os dados.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HERO SPOTLIGHTS (Destaques Maiores) */}
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
         {/* 🏆 CAMPEÃO DO DIA */}
@@ -302,27 +391,94 @@ export default function MatchSummaryDash({
       </div>
 
       {/* TABELA DE RESULTADOS DOS TIMES */}
-      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card">
-        <h3 className="text-[13px] font-bold text-fc-ink mb-3 flex items-center gap-1.5">
-          <Icon name="shield" size={15} className="text-fc-ink/60" /> Classificação Final da Partida
-        </h3>
+      <div className="bg-fc-surface rounded-2xl p-4 border border-fc-line shadow-card space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-[13px] font-bold text-fc-ink flex items-center gap-1.5">
+            <Icon name="shield" size={15} className="text-fc-ink/60" /> Classificação Final da Partida
+          </h3>
+          {canEditStats && (
+            <span className="text-[10.5px] font-medium text-fc-muted bg-fc-cream px-2 py-0.5 rounded-md border border-fc-line/50">
+              Toque no jogador p/ editar
+            </span>
+          )}
+        </div>
 
-        <div className="space-y-2">
-          {stats.teams.map((team, idx) => (
-            <div key={team.id} className="flex items-center justify-between bg-fc-cream/50 p-2.5 rounded-xl border border-fc-line/50">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-5 h-5 rounded-full bg-fc-dark/10 text-fc-ink font-bold text-[11px] flex items-center justify-center shrink-0">
-                  {idx + 1}
-                </span>
-                <span className="font-semibold text-[13px] text-fc-ink truncate">{team.name}</span>
+        <div className="space-y-3">
+          {stats.teams.map((team, idx) => {
+            const vitorias = typeof team.vitorias === 'number' ? team.vitorias : match?.winners?.includes(team.id) ? 1 : 0;
+            const teamPlayers = Array.isArray(team.players) ? team.players : [];
+
+            return (
+              <div
+                key={team.id}
+                className={`rounded-xl p-3 border transition ${
+                  vitorias > 0 ? 'bg-fc-limesoft/60 border-fc-lime/40' : 'bg-fc-cream/40 border-fc-line/60'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 rounded-full bg-fc-dark/10 text-fc-ink font-bold text-[11px] flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="font-bold text-[13.5px] text-fc-ink truncate">{team.name}</span>
+                  </div>
+
+                  <ResultChip
+                    icon="trophy"
+                    label="Vitória"
+                    shortLabel="Vitória"
+                    count={vitorias}
+                    tone="border-fc-lime/50 bg-fc-surface text-fc-ink"
+                    canEdit={canEditStats}
+                    confirmAdd
+                    onAdd={() => onAddResult?.(match.id, team.id, 'vitorias')}
+                    onRemove={() => onRemoveResult?.(match.id, team.id, 'vitorias')}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-fc-line/30">
+                  {teamPlayers.map((tp) => {
+                    const pData = getPlayerData(tp.id, tp.nome);
+                    const goalEntry = (match.goals || []).find((g) => g && g.playerId === tp.id);
+                    const gols = goalEntry?.gols || 0;
+                    const assistencias = goalEntry?.assistencias || 0;
+
+                    return (
+                      <PlayerStatTrigger
+                        key={tp.id}
+                        canEdit={canEditStats}
+                        gols={gols}
+                        assistencias={assistencias}
+                        onAddGoal={() => onAddGoal?.(match.id, tp.id, pData.nome)}
+                        onAddAssist={() => onAddAssist?.(match.id, tp.id, pData.nome)}
+                        onRemoveGoal={() => onRemoveGoal?.(match.id, tp.id, pData.nome)}
+                        onRemoveAssist={() => onRemoveAssist?.(match.id, tp.id, pData.nome)}
+                      >
+                        <div
+                          className={`flex items-center gap-1.5 bg-fc-surface px-2.5 py-1 rounded-lg border border-fc-line text-[11.5px] font-semibold text-fc-ink transition ${
+                            canEditStats ? 'active:scale-95 cursor-pointer' : ''
+                          }`}
+                        >
+                          <Avatar nome={pData.nome} foto={pData.foto} size="w-5 h-5" textSize="text-[9px]" />
+                          <span>{pData.nome}</span>
+                          {gols > 0 && (
+                            <span className="flex items-center gap-0.5 text-[9.5px] font-bold text-white bg-fc-coral rounded-full px-1.5 py-0.5">
+                              <Icon name="ball" size={8} strokeWidth={2} /> {gols}
+                            </span>
+                          )}
+                          {assistencias > 0 && (
+                            <span className="flex items-center gap-0.5 text-[9.5px] font-bold text-white bg-fc-dark/80 rounded-full px-1.5 py-0.5">
+                              <Icon name="assist" size={8} strokeWidth={2.2} /> {assistencias}
+                            </span>
+                          )}
+                        </div>
+                      </PlayerStatTrigger>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0 text-[12px]">
-                <span className="font-bold text-fc-ink bg-fc-limesoft px-2.5 py-0.5 rounded-full border border-fc-lime/30">
-                  {team.vitorias || 0} {team.vitorias === 1 ? 'vitória' : 'vitórias'}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
